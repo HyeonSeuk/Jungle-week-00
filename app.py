@@ -12,6 +12,10 @@ db = client.dbjungle
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/favorite/<user_id>')
+def favorite(user_id):
+    return render_template('index.html')
     
 @app.route('/register')
 def register():
