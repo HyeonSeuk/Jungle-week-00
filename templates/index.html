@@ -1,17 +1,73 @@
 {% extends "base.html" %} {% block content %}
-<h1>메인 페이지</h1>
-<section class="container">
-  <div class="row">
-    {% for event in template_events %}
-    <div class="card col col-md-4" style="width: 18rem">
-      <div class="card-body">
-        <h5 class="card-title">{{ event['title']}}</h5>
-        <p class="card-text">{{ event['beginDt'] }}~{{event['endDt']}}</p>
-        <p class="card-text">{{ event['placeCdNm']}}</p>
-        <div class="card-text">⭐️</div>
-      </div>
-    </div>
-    {% endfor %}
+
+<!-- Banner section -->
+<section class="relative">
+  <div
+    class="bg-[url('static/image/banner.jpg')] w-full h-80 bg-cover bg-center"
+  ></div>
+  <div
+    class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white"
+  >
+    <h1 class="font-bold text-xl">SHOW 대전</h1>
+    <p class="max-w-md text-center font-light">
+      Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque ullam
+      molestias cum mollitia rem quibusdam nesciunt quam rerum sunt voluptatibus
+      inventore, cumque eveniet doloribus ut perspiciatis natus quis itaque
+      tenetur!
+    </p>
   </div>
 </section>
+
+<!-- Tabs & Sort Options -->
+<section class="mt-5 flex flex-col">
+  <div class="flex gap-3 justify-center items-center mb-5">
+    <button class="p-3 border-b-4">전체보기</button>
+    <button class="p-3 text-gray-400">좋아요</button>
+  </div>
+  <div class="items-self-end">
+    <select name="sort" class="p-2 border rounded mb-3">
+      <option value="like" selected>인기순</option>
+      <option value="name">이름순</option>
+      <option value="date">공연일자순</option>
+    </select>
+  </div>
+</section>
+
+<!-- Event List -->
+<section
+  class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-3"
+>
+  {% for event in template_events %}
+  <div class="rounded-md border p-3 relative">
+    <h5 class="card-title">{{ event['title']}}</h5>
+    <small class="block text-gray-500"
+      >{{ event['beginDt'] }}~{{event['endDt']}}</small
+    >
+    <small class="block text-gray-500">{{ event['placeName']}}</small>
+    <div
+      id="fav-{{event["_id"]}}"
+      class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
+    >
+      <button>
+        <span class="material-icons text-md text-rose-500">favorite</span>
+      </button>
+      <small>10</small>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<script>
+  // send fav request
+  async function postFav(id) {
+    try {
+      const response = await fetch('/fav', {method: 'POST'})
+      const data = await response.json()
+
+    } catch(err) {
+      console.log(err)
+    }
+  }
+  
+</script>
 {% endblock content %}
