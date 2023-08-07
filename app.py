@@ -4,7 +4,7 @@ from bson import ObjectId
 
 app = Flask(__name__)
 
-client = MongoClient('mongodb://test:test@3.34.94.133',27017)
+client = MongoClient('mongodb://test:test@localhost',27017)
 db = client.dbjungle
 
 
