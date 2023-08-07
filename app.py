@@ -15,17 +15,18 @@ def home():
     print(all_events)
     return render_template('index.html', template_events= all_events)
 
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
 @app.route('/favorite/<user_id>')
 def favorite(user_id):
     return render_template('index.html')
     
-@app.route('/register')
-def register():
-    return 'register'
-
-@app.route('/login')
-def login():
-    return 'login'
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
