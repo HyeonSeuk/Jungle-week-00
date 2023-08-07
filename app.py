@@ -4,14 +4,16 @@ from bson import ObjectId
 
 app = Flask(__name__)
 
-client = MongoClient('mongodb://test:test@localhost',27017)
+client = MongoClient('localhost',27017)
 db = client.dbjungle
 
 
 # HTML 화면 보여주기 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    all_events = list(db.user.find({}))
+    print(all_events)
+    return render_template('index.html', template_events= all_events)
 
 @app.route('/favorite/<user_id>')
 def favorite(user_id):

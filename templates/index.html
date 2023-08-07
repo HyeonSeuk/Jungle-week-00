@@ -1,5 +1,17 @@
-{% extends "base.html" %}
-
-{% block content %}
-  <h1>메인 페이지</h1>
+{% extends "base.html" %} {% block content %}
+<h1>메인 페이지</h1>
+<section class="container">
+  <div class="row">
+    {% for event in template_events %}
+    <div class="card col col-md-4" style="width: 18rem">
+      <div class="card-body">
+        <h5 class="card-title">{{ event['title']}}</h5>
+        <p class="card-text">{{ event['beginDt'] }}~{{event['endDt']}}</p>
+        <p class="card-text">{{ event['placeCdNm']}}</p>
+        <div class="card-text">⭐️</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
 {% endblock content %}
