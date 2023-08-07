@@ -1,7 +1,7 @@
 import requests, json
 from pymongo import MongoClient
 
-client = MongoClient('mongodb://test:test@localhost',27017)
+client = MongoClient('localhost',27017)
 db = client.dbjungle
 
 url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson?serviceKey=HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
