@@ -46,13 +46,6 @@ def signup():
 @app.route('/login')
 def login():
     return render_template('login.html')
-
-## 특정 사용자의 좋아요 표시한 카드만 출력해주는 페이지
-@app.route('/favorite/<user_id>')
-def favorite(user_id):
-    users_events = list(db.events.find({'_id':user_id}))
-    print(users_events)
-    return render_template('index.html', template_events=users_events)
     
 ## 대구광역시 open API에 접근해서 데이터를 가져오는 페이지
 @app.route('/refresh')
