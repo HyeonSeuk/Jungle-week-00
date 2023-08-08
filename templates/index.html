@@ -1,72 +1,136 @@
 {% extends "base.html" %} {% block content %}
 
-<!-- Banner section -->
-<section class="relative">
-  <div
-    class="bg-[url('static/image/banner.jpg')] w-full h-80 bg-cover bg-center"
-  ></div>
-  <div
-    class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white"
-  >
-    <h1 class="font-bold text-xl">SHOW 대전</h1>
-    <p class="max-w-md text-center font-light">
-      Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque ullam
-      molestias cum mollitia rem quibusdam nesciunt quam rerum sunt voluptatibus
-      inventore, cumque eveniet doloribus ut perspiciatis natus quis itaque
-      tenetur!
-    </p>
-  </div>
-</section>
-
-<!-- Tabs & Sort Options -->
-<section class="mt-5 flex flex-col">
-  <div class="flex gap-3 justify-center items-center mb-5">
-    <button class="p-3 border-b-4">전체보기</button>
-    <button class="p-3 text-gray-400">좋아요</button>
-  </div>
-  <div class="items-self-end">
-    <select name="sort" class="p-2 border rounded mb-3">
-      <option value="like" selected>인기순</option>
-      <option value="name">이름순</option>
-      <option value="date">공연일자순</option>
-    </select>
-  </div>
-</section>
-
-<!-- Event List -->
-<section
-  class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-3"
->
-  {% for event in template_events %}
-  <div class="rounded-md border p-3 relative">
-    <h5 class="card-title">{{ event['title']}}</h5>
-    <small class="block text-gray-500"
-      >{{ event['beginDt'] }}~{{event['endDt']}}</small
-    >
-    <small class="block text-gray-500">{{ event['placeName']}}</small>
+<div  class="p-3">
+  <!-- Banner section -->
+  <section class="relative">
     <div
-      id="fav-{{event["_id"]}}"
-      class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
+      class="bg-[url('static/image/banner.jpg')] w-full h-80 bg-cover bg-center"
+    ></div>
+    <div
+      class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white"
     >
-      <button>
-        <span class="material-icons text-md text-rose-500">favorite</span>
-      </button>
-      <small>10</small>
+      <h1 class="font-bold text-xl">SHOW 대전</h1>
+      <p class="max-w-md text-center font-light">
+        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque ullam
+        molestias cum mollitia rem quibusdam nesciunt quam rerum sunt voluptatibus
+        inventore, cumque eveniet doloribus ut perspiciatis natus quis itaque
+        tenetur!
+      </p>
     </div>
-  </div>
+  </section>
+
+  <!-- Tabs & Sort Options -->
+  <section class="mt-5 flex flex-col">
+    <div class="flex gap-3 justify-center items-center mb-5">
+      <button class="p-3 border-b-4">전체보기</button>
+      <button class="p-3 text-gray-400">좋아요</button>
+    </div>
+    
+  </section>
+
+  <!-- Sort Options & paging -->
+  <section class="flex justify-between items-center">
+    <div class="items-self-end">
+      <select name="sort" class="p-2 border rounded mb-3">
+        <option value="like" selected>인기순</option>
+        <option value="name">이름순</option>
+        <option value="date">공연일자순</option>
+      </select>
+    </div>
+    <!-- Paging Buttons -->
+    <div class="flex gap-2">
+      {% for page in template_events %}
+      <a {% if loop.index == pageNo %} id="curr-page" {% endif %}
+        class="px-3 py-1 rounded border {% if loop.index == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
+        href="/?page={{loop.index}}">{{loop.index}}</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Page Event List -->
+  {% for event in template_events[pageNo-1] %}
+    <div class="rounded-md border p-3 relative">
+      <h5 class="card-title">{{ event['title']}}</h5>
+      <small class="block text-gray-500"
+        >{{ event['beginDt'] }}~{{event['endDt']}}</small
+      >
+      <small class="block text-gray-500">{{event['placeName']}}</small>
+      <div
+        class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
+      >
+        <a data-id="{{event["_id"]}}" data-stat="0" class="like cursor-pointer">
+          <span class="material-icons text-md text-rose-500">favorite</span>
+        </a>
+        <small>{{event['fav_count']}}</small>
+      </div>
+    </div>
+    {% endfor %}
+
+  <!-- Event List -->
+  <!-- {% if template_events %}
+  {% for page in template_events %}
+  <section id="page-{{loop.index}}" class="page hidden grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-3">
+    {% for event in page %}
+    <div class="rounded-md border p-3 relative">
+      <h5 class="card-title">{{ event['title']}}</h5>
+      <small class="block text-gray-500"
+        >{{ event['beginDt'] }}~{{event['endDt']}}</small
+      >
+      <small class="block text-gray-500">{{event['placeName']}}</small>
+      <div
+        class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
+      >
+        <a data-id="{{event["_id"]}}" data-stat="0" class="like cursor-pointer">
+          <span class="material-icons text-md text-rose-500">favorite</span>
+        </a>
+        <small>{{event['fav_count']}}</small>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
   {% endfor %}
-</section>
+  {% endif %} -->
+
+  
+
+</div>
 
 <script>
-  // send fav request
-  async function postFav(id) {
-    try {
-      const response = await fetch('/fav', {method: 'POST'})
-      const data = await response.json()
+  $(document).ready(() => {
+    // 초기에는 첫 번째 페이지를 보여줌
+    showPage(1)
 
-    } catch(err) {
-      console.log(err)
-    }
+    // paging radio 눌렀을 때의 동작
+    $('input[name="paging"]').change((e) => {
+      $('.page').css('display', 'none')
+      showPage(parseInt(e.target.value))
+    })
+
+    // 좋아요 버튼 동작
+    $('.like').each((i, like) => {
+      $(like).click(() => {
+        const user = getCurrUser()
+        if(user) {
+          let event_id = $(like).data("id") 
+          // TODO dislike 만들기
+          // TODO toggle mode
+          let api = $(like).data("stat") ? 'like' : 'like' 
+          let page = $('#curr-page').text()
+          window.location.href = `/${api}/${user}/${event_id}/${page}`
+        }
+        /* TODO what if not logged in? */
+      })
+    })
+  })
+
+  // param i 번째 페이지의 카드를 노출
+  function showPage(i) {
+    $(`#page-${i}`).css('display', 'block')
+  }
+
+  function getCurrUser() {
+    // 현재 로그인한 유저의 아이디를 가져옵니다.
+    return "001"
   }
   
 </script>

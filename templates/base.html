@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en">https://github.com/HyeonSeuk/Jungle-week-00/pull/13/conflict?name=templates%252Fbase.html&ancestor_oid=4cd79368044acdcd96f7ddef35d463f940eb6d6c&base_oid=178ee7d6bf66d98203fb5aea15a35865722d6112&head_oid=9fa26bc627ed3fd1a68e38bcaa65b1893cf5ae34
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -47,18 +47,33 @@
   </head>
   <body>
     <header>
-      <nav class="w-full bg-slate-100">
+      <nav class="w-full bg-slate-100 flex justify-between items-center">
         <div class="container p-3">
           <a class="font-bold" href="#">SHOW 대전</a>
         </div>
+        <div id="login-area">
+          <button
+            id="login-button"
+            class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
+          >
+            로그인
+          </button>
+        </div>
       </nav>
     </header>
-    <main class="p-3">{% block content %} {% endblock %}</main>
-    <footer class="flex justify-between w-100 p-3 text-gray-500 text-sm">
+    <main>{% block content %} {% endblock %}</main>
+    <!-- <footer
+      class="flex absolute bottom-0 justify-between w-full p-3 text-gray-500 text-sm"
+    >
       <p>SW Jungle 2023</p>
       <p>4조 SHOW 대전</p>
     </footer>
-  {% block javascript %}
-  {% endblock javascript %}
+    {% block javascript %}
+    {% endblock javascript %}
+    <script>
+      $(document).ready(() => {
+        $("#login-button").click(() => {});
+      });
+    </script>
   </body>
 </html>
