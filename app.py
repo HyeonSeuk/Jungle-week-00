@@ -12,7 +12,7 @@ db = client.dbjungle
 # HTML 화면 보여주기 
 @app.route('/')
 def home():
-    all_events = list(db.user.find({}))
+    all_events = list(db.events.find({}))
     print(all_events)
     return render_template('index.html', template_events= all_events)
 
