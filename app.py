@@ -71,7 +71,7 @@ def api_login():
         return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
         
     payload = {
-        'email' : email,
+        'id': str(result['_id']),
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
