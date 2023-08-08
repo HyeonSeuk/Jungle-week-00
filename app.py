@@ -19,7 +19,7 @@ def home():
     # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
-    token = request.cookies.get('token')
+    token = request.cookies.get('token', None)
 
     user_id = get_user_id(token)
     all_events = get_all_events(user_id)
@@ -79,6 +79,13 @@ def api_login():
     response.set_cookie('token', token) 
     return response
 
+@app.route('/api/logout')
+def api_logout():
+    response = make_response(redirect(url_for('home')))
+    response.set_cookie('token', '', expires=-1)
+    return response
+
+
 @app.route('/login')
 def login():
     return render_template('login.html')
@@ -104,6 +111,7 @@ def refresh():
 
 # get user id from token
 def get_user_id(token):
+    if token == None: return None
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
@@ -114,10 +122,11 @@ page 페이징 넘버
 '''
 @app.route('/<tab>/<islike>/<event_id>/<page>')
 def like(tab, islike, event_id, page):
-    print("TEST", tab, islike, event_id, page)
-    # TODO token의 인증 과정을 거칩니다.
     token = request.cookies.get('token')
     user = get_user_id(token)
+    if not user:
+      flash("로그인 필요")
+      return redirect(url_for('home', page=page, tab=tab))
     if islike == "like": # like or dislike
       db.userevent.insert_one({'user_id': user, 'event_id': event_id})
     else:

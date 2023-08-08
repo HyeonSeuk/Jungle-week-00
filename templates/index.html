@@ -35,6 +35,7 @@
         <option value="date">공연일자순</option>
       </select>
     </div>
+
     <!-- Paging Buttons -->
     <div class="flex gap-2">
       {% for page in template_events %}
@@ -67,6 +68,19 @@
     </div>
     {% endif %}
   {% endfor %}
+
+  <!-- Need Login Alert -->
+  <div>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li style="color:crimson;font-size:large;text-align: center;">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </div>
 </div>
 
 <script>
