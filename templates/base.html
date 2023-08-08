@@ -37,16 +37,31 @@
   </head>
   <body>
     <header>
-      <nav class="w-full bg-slate-100">
+      <nav class="w-full bg-slate-100 flex justify-between items-center">
         <div class="container p-3">
           <a class="font-bold" href="#">SHOW 대전</a>
         </div>
+        <div id="login-area">
+          <button
+            id="login-button"
+            class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
+          >
+            로그인
+          </button>
+        </div>
       </nav>
     </header>
-    <main class="p-3">{% block content %} {% endblock %}</main>
-    <footer class="flex justify-between w-100 p-3 text-gray-500 text-sm">
+    <main>{% block content %} {% endblock %}</main>
+    <!-- <footer
+      class="flex absolute bottom-0 justify-between w-full p-3 text-gray-500 text-sm"
+    >
       <p>SW Jungle 2023</p>
       <p>4조 SHOW 대전</p>
-    </footer>
+    </footer> -->
+    <script>
+      $(document).ready(() => {
+        $("#login-button").click(() => {});
+      });
+    </script>
   </body>
 </html>
