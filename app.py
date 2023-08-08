@@ -1,7 +1,8 @@
 from pymongo import MongoClient
-from flask import Flask, render_template, jsonify, redirect, url_for, request, flash
+from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response
 from flask_bcrypt import Bcrypt
 import requests, jwt, datetime, os
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -18,16 +19,16 @@ def home():
     # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
+    token = request.cookies.get('token')
 
-    user = request.cookies.get('token')
-    all_events = get_all_events(user)
+    user_id = get_user_id(token)
+    all_events = get_all_events(user_id)
     if(tab == 'fav'):
-        all_events = get_fav_events(user)
+        all_events = get_fav_events(user_id)
     return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
-# 
 @app.route('/signup', methods=['POST', 'GET'])
 def signup():
     if request.method == 'POST':
@@ -74,7 +75,9 @@ def api_login():
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    return redirect(url_for('home', token=token))
+    response = make_response(redirect(url_for('home')))
+    response.set_cookie('token', token) 
+    return response
 
 @app.route('/login')
 def login():
@@ -97,6 +100,11 @@ def refresh():
             'endDt':e['endDt'],
             'placeName':e['placeCdNm'],
             })
+        
+
+# get user id from token
+def get_user_id(token):
+    return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
 tab 현재 탭 정보: all or fav
@@ -109,7 +117,7 @@ def like(tab, islike, event_id, page):
     print("TEST", tab, islike, event_id, page)
     # TODO token의 인증 과정을 거칩니다.
     token = request.cookies.get('token')
-    user = token
+    user = get_user_id(token)
     if islike == "like": # like or dislike
       db.userevent.insert_one({'user_id': user, 'event_id': event_id})
     else:
