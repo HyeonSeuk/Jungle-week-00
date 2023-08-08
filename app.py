@@ -72,7 +72,7 @@ def api_login():
         
     payload = {
         'id': str(result['_id']),
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
+        # 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     response = make_response(redirect(url_for('home')))
