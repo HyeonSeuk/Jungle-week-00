@@ -1,11 +1,14 @@
 from pymongo import MongoClient
 from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response
 from flask_bcrypt import Bcrypt
-import requests, jwt, datetime, os
+import requests, jwt, datetime, os, time
 from bson.objectid import ObjectId
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
+scheduler = BackgroundScheduler()
+scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
 
@@ -90,23 +93,7 @@ def api_logout():
 def login():
     return render_template('login.html')
     
-## 대구광역시 open API에 접근해서 데이터를 가져오는 페이지
-@app.route('/refresh')
-def refresh():
-    url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
-    api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
-    api_key_decode = requests.utils.unquote(api_key)
-    
-    res = requests.get(url, params={'serviceKey':api_key_decode})
-    events = res.json()['msgBody']
 
-    for e in events:
-        db.events.insert_one({
-            'title':e['title'],
-            'beginDt':e['beginDt'],
-            'endDt':e['endDt'],
-            'placeName':e['placeCdNm'],
-            })
         
 
 # get user id from token
@@ -156,6 +143,39 @@ def get_fav_events(user):
         if(event['is_mine']): all_favs.append(event)
     return all_favs
     
+# 웹 크롤링 수행
+def perform_web_crawling():
+    print(f'success : {time.strftime("%H:%M:%S")}')
+
+    # open api 요청
+    url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
+    api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
+    api_key_decode = requests.utils.unquote(api_key)
+    res = requests.get(url, params={'serviceKey':api_key_decode})
+
+    # 결과 db에 저장
+    events = res.json()['msgBody']
+    for e in events:
+        # 이미 존재하면 넘어간다
+        if db.events.find_one({
+            'title':e['title'],
+            'beginDt':e['beginDt'],
+            'endDt':e['endDt'],
+            'placeName':e['placeCdNm']
+        }):
+            continue
+
+        db.events.insert_one({
+            'title':e['title'],
+            'beginDt':e['beginDt'],
+            'endDt':e['endDt'],
+            'placeName':e['placeCdNm']
+        })
+        print(e['title'])
 
 if __name__ == '__main__':
+    # 웹 크롤링 스케쥴러 시작
+    scheduler.add_job(perform_web_crawling, 'interval', minutes=30)
+    scheduler.start()
+
     app.run('0.0.0.0', port=5000, debug=True)
