@@ -5,11 +5,11 @@ import requests
 
 app = Flask(__name__)
 
-client = MongoClient('localhost',27017)
+client = MongoClient('localhost', 27017)
 db = client.dbjungle
 
 
-# HTML 화면 보여주기 
+# HTML 화면 보여주기
 @app.route('/')
 def home():
     all_events = list(db.events.find({}))
