@@ -18,19 +18,17 @@ def home():
     return render_template('index.html', template_events=all_events)
 
 
-@app.route('/favorite/<user_id>')
-def favorite(user_id):
-    return render_template('index.html')
-
-
 @app.route('/signup')
-def register():
-    return 'signup'
-
+def signup():
+    return render_template('signup.html')
 
 @app.route('/login')
 def login():
-    return 'login'
+    return render_template('login.html')
+
+@app.route('/favorite/<user_id>')
+def favorite(user_id):
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
