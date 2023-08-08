@@ -1,15 +1,18 @@
 from pymongo import MongoClient
-from flask import Flask, render_template, jsonify, redirect, url_for, request
-from bson import ObjectId
-import requests
+from flask import Flask, render_template, jsonify, redirect, url_for, request, flash
+from flask_bcrypt import Bcrypt
+import requests, jwt, datetime, os
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
+app.secret_key = 'jungle7'
+
 
 client = MongoClient('localhost', 27017)
 db = client.dbjungle
+SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
-
-# HTML 화면 보여주기
+## 메인 페이지
 @app.route('/')
 def home():
     # arg로 전달된 페이징을 확인, 없으면 1
@@ -22,21 +25,51 @@ def home():
         all_events = get_fav_events(user)
     return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
 
-@app.route('/signup')
+## 회원가입 페이지
+# form 입력(nickname, email, pwd, pwd2를 전달받는다.)
+# 
+@app.route('/signup', methods=['POST', 'GET'])
 def signup():
-    return render_template('signup.html')
+    if request.method == 'POST':
+        nickname = request.form['nickname']
+        email = request.form['email']
+        pwd = request.form['password']
+        pwd_confirm = request.form['password2']
+
+        # 확인 pwd가 일치하지 않으면 에러메시지와 함께 [GET]'/signup'으로 리다이렉트
+        if pwd != pwd_confirm:
+            flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
+            return redirect(url_for('signup'))
+
+        # pwd암호화 후 저장
+        pwd_hash = bcrypt.generate_password_hash(pwd)
+        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
+        
+        return redirect(url_for('login'))
+    
+    return render_template('signup.html') 
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    email = request.form['email']
+    password = request.form['password']
+    
+    pw_hash = bcrypt.generate_password_hash(password)
+    result = db.users.find_one({'email':email, 'password':pw_hash})
+    
+    if result is not None:
+        payload = {
+            'email' : email,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+        return redirect(url_for('home'))
+    else:
+        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.', 'token':token})
 
 @app.route('/login')
 def login():
     return render_template('login.html')
-
-# 인증
-@app.route('/auth')
-def auth():
-    token = request.args.get('token')
-    # TODO token의 인증 과정을 거칩니다.
-    user_id = token
-    return redirect(url_for('home', user=user_id))
 
 '''
 tab 현재 탭 정보: all or fav

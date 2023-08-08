@@ -34,6 +34,16 @@
     ></script>
 
     <title>Show대전</title>
+
+    <style>
+      footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+      {% block style %}{% endblock style %}
+    </style>
+    
   </head>
   <body>
     <header>
@@ -59,12 +69,15 @@
       </nav>
     </header>
     <main>{% block content %} {% endblock %}</main>
+    {% block javascript %}
+    <script></script>
+    {% endblock javascript %}
     <!-- <footer
       class="flex absolute bottom-0 justify-between w-full p-3 text-gray-500 text-sm"
     >
       <p>SW Jungle 2023</p>
       <p>4조 SHOW 대전</p>
-    </footer> -->
+    </footer>
     <script>
       $(document).ready(() => {
         if (getCookie("token")) {
