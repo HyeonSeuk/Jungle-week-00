@@ -17,8 +17,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 def home():
     # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
-    all_events = get_all_events()
-    return render_template('index.html', template_events= all_events, pageNo=page)
+    tab = request.args.get('tab', "all")
+
+    user = request.cookies.get('token')
+    all_events = get_all_events(user)
+    if(tab == 'fav'):
+        all_events = get_fav_events(user)
+    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
@@ -65,46 +70,47 @@ def api_login():
 @app.route('/login')
 def login():
     return render_template('login.html')
-    
-## 대구광역시 open API에 접근해서 데이터를 가져오는 페이지
-@app.route('/refresh')
-def refresh():
-    url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson?serviceKey=HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
-    res = requests.get(url)
-    events = res.json()['msgBody']
 
-    for e in events:
-        db.events.insert_one({
-            'title':e['title'],
-            'beginDt':e['beginDt'],
-            'endDt':e['endDt'],
-            'placeName':e['placeCdNm'],
-            })
+'''
+tab 현재 탭 정보: all or fav
+islike 좋아요 또는 좋아요 취소
+event_id 행사 정보
+page 페이징 넘버
+'''
+@app.route('/<tab>/<islike>/<event_id>/<page>')
+def like(tab, islike, event_id, page):
+    print("TEST", tab, islike, event_id, page)
+    # TODO token의 인증 과정을 거칩니다.
+    token = request.cookies.get('token')
+    user = token
+    if islike == "like": # like or dislike
+      db.userevent.insert_one({'user_id': user, 'event_id': event_id})
+    else:
+      db.userevent.delete_one({'user_id': user, 'event_id': event_id})
+    return redirect(url_for('home', page=page, tab=tab))
 
-    return 'ok'
+# 행사 데이터를 가공
+# 4개씩 페이징합니다.
+def chunk_events(events):
+    return [events[i:i+4] for i in range(0, len(events), 4)]
 
-# 좋아요 클릭 = like
-# 좋아요 취소 = dislike
-@app.route('/like/<token>/<event_id>/<page>')
-def like(token, event_id, page):
-    # TODO token -> user_id
-    db.userevent.insert_one({'user_id': token, 'event_id': event_id})
-    print("THIS IS ALL LIKES DATA" + token, event_id, page)
-    return redirect(url_for('home', page=page))
-
-# 행사 데이터를 가공하는 함수
-# fav_count열을 포함합니다.
-# 현재 로그인된 사용자가 좋아했는지 여부를 포함합니다.
-# 6개씩 페이징합니다.
-def get_all_events():
+# fav_count, is_mine
+def get_all_events(user):
     events = list(db.events.find({}))
-    def get_fav_count(event):
+    for event in events:
         event['fav_count'] = len(list(db.userevent.find({'event_id': str(event['_id'])})))
-        # TODO 여기서 현재 로그인된 사용자가 즐겨찾기했는지 여부 t/f만 같이 반환
-        # event['is_mine'] = len(list(db.userevent.find({'user_id': '____', 'event_id': str(event['_id'])})))
-        return event
-    
-    return [list(map(get_fav_count, events[i:i+4])) for i in range(0, len(events), 4)]
+        event['is_mine'] = False
+        if(user):
+            event['is_mine'] = len(list(db.userevent.find({'user_id': user, 'event_id': str(event['_id'])}))) > 0
+    return events
+
+# 좋아요한 데이터만 가져옵니다.
+def get_fav_events(user):
+    events = get_all_events(user)
+    all_favs = []
+    for event in events:
+        if(event['is_mine']): all_favs.append(event)
+    return all_favs
     
 
 if __name__ == '__main__':

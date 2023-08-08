@@ -1,6 +1,7 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 
-<div  class="p-3">
+<div class="p-3">
   <!-- Banner section -->
   <section class="relative">
     <div
@@ -19,13 +20,10 @@
     </div>
   </section>
 
-  <!-- Tabs & Sort Options -->
-  <section class="mt-5 flex flex-col">
-    <div class="flex gap-3 justify-center items-center mb-5">
-      <button class="p-3 border-b-4">전체보기</button>
-      <button class="p-3 text-gray-400">좋아요</button>
-    </div>
-    
+  <!-- Tab Button -->
+  <section id="tabs" data-tab="{{tab}}"class="mt-5 flex gap-3 justify-center items-center mb-5">
+    <a href="/?tab=all" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
+    <a href="/?tab=fav" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
   </section>
 
   <!-- Sort Options & paging -->
@@ -42,13 +40,16 @@
       {% for page in template_events %}
       <a {% if loop.index == pageNo %} id="curr-page" {% endif %}
         class="px-3 py-1 rounded border {% if loop.index == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-        href="/?page={{loop.index}}">{{loop.index}}</a>
+        href="/?page={{loop.index}}&tab={{tab}}">{{loop.index}}</a>
       {% endfor %}
     </div>
   </section>
 
-  <!-- Page Event List -->
+  <!-- All Event List -->
   {% for event in template_events[pageNo-1] %}
+    {% if (tab == 'fav' and not event['is_mine']) %}
+      <div></div>
+    {% else %}
     <div class="rounded-md border p-3 relative">
       <h5 class="card-title">{{ event['title']}}</h5>
       <small class="block text-gray-500"
@@ -58,80 +59,34 @@
       <div
         class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
       >
-        <a data-id="{{event["_id"]}}" data-stat="0" class="like cursor-pointer">
-          <span class="material-icons text-md text-rose-500">favorite</span>
+        <small>{{event['fav_count']}} </small>
+        <a data-id="{{event["_id"]}}" data-stat="{{event['is_mine']}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
+          favorite
         </a>
-        <small>{{event['fav_count']}}</small>
       </div>
     </div>
-    {% endfor %}
-
-  <!-- Event List -->
-  <!-- {% if template_events %}
-  {% for page in template_events %}
-  <section id="page-{{loop.index}}" class="page hidden grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-3">
-    {% for event in page %}
-    <div class="rounded-md border p-3 relative">
-      <h5 class="card-title">{{ event['title']}}</h5>
-      <small class="block text-gray-500"
-        >{{ event['beginDt'] }}~{{event['endDt']}}</small
-      >
-      <small class="block text-gray-500">{{event['placeName']}}</small>
-      <div
-        class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
-      >
-        <a data-id="{{event["_id"]}}" data-stat="0" class="like cursor-pointer">
-          <span class="material-icons text-md text-rose-500">favorite</span>
-        </a>
-        <small>{{event['fav_count']}}</small>
-      </div>
-    </div>
-    {% endfor %}
-  </section>
+    {% endif %}
   {% endfor %}
-  {% endif %} -->
-
-  
-
 </div>
 
 <script>
   $(document).ready(() => {
-    // 초기에는 첫 번째 페이지를 보여줌
-    showPage(1)
-
-    // paging radio 눌렀을 때의 동작
-    $('input[name="paging"]').change((e) => {
-      $('.page').css('display', 'none')
-      showPage(parseInt(e.target.value))
-    })
-
     // 좋아요 버튼 동작
     $('.like').each((i, like) => {
       $(like).click(() => {
-        const user = getCurrUser()
-        if(user) {
+        if(!getCookie('token')) {
+          alert("로그인하세요")
+        } else {
           let event_id = $(like).data("id") 
-          // TODO dislike 만들기
-          // TODO toggle mode
-          let api = $(like).data("stat") ? 'like' : 'like' 
+          let islike = $(like).data("stat") === "True" ? 'dislike' : 'like' 
           let page = $('#curr-page').text()
-          window.location.href = `/${api}/${user}/${event_id}/${page}`
+          let tab = $("#tabs").data("tab")
+          window.location.href = `/${tab}/${islike}/${event_id}/${page}`
         }
-        /* TODO what if not logged in? */
       })
     })
   })
 
-  // param i 번째 페이지의 카드를 노출
-  function showPage(i) {
-    $(`#page-${i}`).css('display', 'block')
-  }
-
-  function getCurrUser() {
-    // 현재 로그인한 유저의 아이디를 가져옵니다.
-    return "001"
-  }
   
 </script>
 {% endblock content %}
