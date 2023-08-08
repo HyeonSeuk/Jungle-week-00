@@ -74,15 +74,11 @@
     // 좋아요 버튼 동작
     $('.like').each((i, like) => {
       $(like).click(() => {
-        if(!getCookie('token')) {
-          alert("로그인하세요")
-        } else {
-          let event_id = $(like).data("id") 
-          let islike = $(like).data("stat") === "True" ? 'dislike' : 'like' 
-          let page = $('#curr-page').text()
-          let tab = $("#tabs").data("tab")
-          window.location.href = `/${tab}/${islike}/${event_id}/${page}`
-        }
+        let event_id = $(like).data("id") 
+        let islike = $(like).data("stat") === "True" ? 'dislike' : 'like' 
+        let page = $('#curr-page').text()
+        let tab = $("#tabs").data("tab")
+        window.location.href = `/${tab}/${islike}/${event_id}/${page}`
       })
     })
   })
