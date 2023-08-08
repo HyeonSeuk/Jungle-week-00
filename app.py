@@ -41,6 +41,12 @@ def signup():
             flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
             return redirect(url_for('signup'))
 
+        # 이미 저장된 email이 있으면 반려함
+        result = db.users.find_one({'email':email})
+        if not result:
+            flash('등록된 이메일이 이미 존재합니다.', 'error')
+            return redirect(url_for('signup'))
+
         # pwd암호화 후 저장
         pwd_hash = bcrypt.generate_password_hash(pwd)
         db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
