@@ -47,11 +47,12 @@
   </section>
 
   <!-- All Event List -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
   {% for event in template_events[pageNo-1] %}
     {% if (tab == 'fav' and not event['is_mine']) %}
       <div></div>
     {% else %}
-    <div class="rounded-md border p-3 relative">
+    <div class="rounded-md border p-3 relative h-32">
       <h5 class="card-title">{{ event['title']}}</h5>
       <small class="block text-gray-500"
         >{{ event['beginDt'] }}~{{event['endDt']}}</small
@@ -68,23 +69,36 @@
     </div>
     {% endif %}
   {% endfor %}
+  </section>
 
   <!-- Need Login Alert -->
-  <div>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li style="color:crimson;font-size:large;text-align: center;">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-  </div>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div id="modal" class="w-screen h-screen flex justify-center items-center fixed top-0 left-0 bg-slate-800/50">
+        {% for message in messages %}
+          <div class="p-3 w-1/3 bg-white rounded flex flex-col text-center ">
+            <div>{{message}}</div>
+            <div class="flex mt-3 text-sm gap-2">
+              <a id="close-modal" class="p-2 bg-gray-500 text-white max-h-10 rounded w-1/2 cursor-pointer">닫기</a>
+              <a href="/login" class="p-2 bg-blue-500 text-white max-h-10 rounded w-1/2">로그인하기</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  
 </div>
 
 <script>
   $(document).ready(() => {
+    // 로그인 필요 모달에서 닫기 버튼 동작
+    $("#close-modal").click(() => {
+      let page = $('#curr-page').text()
+      let tab = $("#tabs").data("tab")
+      window.location.href = `/?page=${page}&tab=${tab}`
+    })
+
     // 좋아요 버튼 동작
     $('.like').each((i, like) => {
       $(like).click(() => {

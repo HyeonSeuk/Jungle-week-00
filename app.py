@@ -22,13 +22,16 @@ def home():
     # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
-    token = request.cookies.get('token', None)
 
+    token = request.cookies.get('token', None)
     user_id = get_user_id(token)
+    nickname = None
+    if user_id: nickname = db.users.find_one({'_id': user_id})['nickname']
+    logged_in = nickname != None
+
     all_events = get_all_events(user_id)
-    if(tab == 'fav'):
-        all_events = get_fav_events(user_id)
-    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
+    if tab == 'fav': all_events = get_fav_events(user_id)
+    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab, nickname=nickname, loggedIn=logged_in)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
@@ -92,9 +95,6 @@ def api_logout():
 @app.route('/login')
 def login():
     return render_template('login.html')
-    
-
-        
 
 # get user id from token
 def get_user_id(token):
@@ -112,7 +112,7 @@ def like(tab, islike, event_id, page):
     token = request.cookies.get('token')
     user = get_user_id(token)
     if not user:
-      flash("로그인 필요")
+      flash("로그인이 필요한 기능입니다.")
       return redirect(url_for('home', page=page, tab=tab))
     if islike == "like": # like or dislike
       db.userevent.insert_one({'user_id': user, 'event_id': event_id})
