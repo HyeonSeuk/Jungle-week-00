@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from flask import Flask, render_template, jsonify, redirect, url_for, request, flash
 from flask_bcrypt import Bcrypt
-import requests, hashlib, jwt, datetime, os
+import requests, jwt, datetime, os
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -37,7 +37,7 @@ def signup():
             return redirect(url_for('signup'))
 
         # pwd암호화 후 저장
-        pwd_hash = hashlib.sha256(pwd.encode('utf-8')).hexdigest()
+        pwd_hash = bcrypt.generate_password_hash(pwd)
         db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
         
         return redirect(url_for('login'))
@@ -49,8 +49,7 @@ def api_login():
     email = request.form['email']
     password = request.form['password']
     
-    pw_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
-    
+    pw_hash = bcrypt.generate_password_hash(password)
     result = db.users.find_one({'email':email, 'password':pw_hash})
     
     if result is not None:
