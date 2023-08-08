@@ -14,9 +14,13 @@ db = client.dbjungle
 def home():
     # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
+    tab = request.args.get('tab', "all")
+
     user = request.cookies.get('token')
     all_events = get_all_events(user)
-    return render_template('index.html', template_events= all_events, pageNo=page)
+    if(tab == 'fav'):
+        all_events = get_fav_events(user)
+    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
 
 @app.route('/signup')
 def signup():
@@ -33,36 +37,47 @@ def auth():
     # TODO token의 인증 과정을 거칩니다.
     user_id = token
     return redirect(url_for('home', user=user_id))
-        
 
-
-# 좋아요 클릭 = like
-# 좋아요 취소 = dislike
-@app.route('/<islike>/<token>/<event_id>/<page>')
-def like(islike, token, event_id, page):
+'''
+tab 현재 탭 정보: all or fav
+islike 좋아요 또는 좋아요 취소
+event_id 행사 정보
+page 페이징 넘버
+'''
+@app.route('/<tab>/<islike>/<event_id>/<page>')
+def like(tab, islike, event_id, page):
+    print("TEST", tab, islike, event_id, page)
     # TODO token의 인증 과정을 거칩니다.
-    if islike == "like":
-      db.userevent.insert_one({'user_id': token, 'event_id': event_id})
+    token = request.cookies.get('token')
+    user = token
+    if islike == "like": # like or dislike
+      db.userevent.insert_one({'user_id': user, 'event_id': event_id})
     else:
-      db.userevent.delete_one({'user_id': token, 'event_id': event_id})
-    return redirect(url_for('home', page=page))
+      db.userevent.delete_one({'user_id': user, 'event_id': event_id})
+    return redirect(url_for('home', page=page, tab=tab))
 
-# 행사 데이터를 가공하는 함수
-# fav_count열을 포함합니다.
-# 현재 로그인된 사용자가 좋아했는지 여부를 포함합니다.
-# 6개씩 페이징합니다.
+# 행사 데이터를 가공
+# 4개씩 페이징합니다.
+def chunk_events(events):
+    return [events[i:i+4] for i in range(0, len(events), 4)]
+
+# fav_count, is_mine
 def get_all_events(user):
     events = list(db.events.find({}))
-    def get_fav_count(event):
+    for event in events:
         event['fav_count'] = len(list(db.userevent.find({'event_id': str(event['_id'])})))
-        # TODO 여기서 현재 로그인된 사용자가 즐겨찾기했는지 여부 t/f만 같이 반환
-        is_mine = False
+        event['is_mine'] = False
         if(user):
-            is_mine = len(list(db.userevent.find({'user_id': user, 'event_id': str(event['_id'])}))) > 0
-        event['is_mine'] = is_mine
-        return event
-    
-    return [list(map(get_fav_count, events[i:i+4])) for i in range(0, len(events), 4)]
+            event['is_mine'] = len(list(db.userevent.find({'user_id': user, 'event_id': str(event['_id'])}))) > 0
+    return events
+
+# 좋아요한 데이터만 가져옵니다.
+def get_fav_events(user):
+    events = get_all_events(user)
+    all_favs = []
+    for event in events:
+        if(event['is_mine']): all_favs.append(event)
+    return all_favs
     
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 
-<div  class="p-3">
+<div class="p-3">
   <!-- Banner section -->
   <section class="relative">
     <div
@@ -19,13 +20,10 @@
     </div>
   </section>
 
-  <!-- Tabs & Sort Options -->
-  <section class="mt-5 flex flex-col">
-    <div class="flex gap-3 justify-center items-center mb-5">
-      <button class="p-3 border-b-4">전체보기</button>
-      <button class="p-3 text-gray-400">좋아요</button>
-    </div>
-    
+  <!-- Tab Button -->
+  <section id="tabs" data-tab="{{tab}}"class="mt-5 flex gap-3 justify-center items-center mb-5">
+    <a href="/?tab=all" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
+    <a href="/?tab=fav" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
   </section>
 
   <!-- Sort Options & paging -->
@@ -42,13 +40,16 @@
       {% for page in template_events %}
       <a {% if loop.index == pageNo %} id="curr-page" {% endif %}
         class="px-3 py-1 rounded border {% if loop.index == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-        href="/?page={{loop.index}}">{{loop.index}}</a>
+        href="/?page={{loop.index}}&tab={{tab}}">{{loop.index}}</a>
       {% endfor %}
     </div>
   </section>
 
-  <!-- Page Event List -->
+  <!-- All Event List -->
   {% for event in template_events[pageNo-1] %}
+    {% if (tab == 'fav' and not event['is_mine']) %}
+      <div></div>
+    {% else %}
     <div class="rounded-md border p-3 relative">
       <h5 class="card-title">{{ event['title']}}</h5>
       <small class="block text-gray-500"
@@ -59,12 +60,12 @@
         class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
       >
         <small>{{event['fav_count']}} </small>
-        <a data-id="{{event["_id"]}}" data-stat="{{event['is_mine']}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %}text-rose-400 {% endif %}">
+        <a data-id="{{event["_id"]}}" data-stat="{{event['is_mine']}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
           favorite
         </a>
-       
       </div>
     </div>
+    {% endif %}
   {% endfor %}
 </div>
 
@@ -72,15 +73,15 @@
   $(document).ready(() => {
     // 좋아요 버튼 동작
     $('.like').each((i, like) => {
-      const token = getCookie('token')
       $(like).click(() => {
-        if(!token) {
+        if(!getCookie('token')) {
           alert("로그인하세요")
         } else {
           let event_id = $(like).data("id") 
           let islike = $(like).data("stat") === "True" ? 'dislike' : 'like' 
           let page = $('#curr-page').text()
-          window.location.href = `/${islike}/${token}/${event_id}/${page}`
+          let tab = $("#tabs").data("tab")
+          window.location.href = `/${tab}/${islike}/${event_id}/${page}`
         }
       })
     })
