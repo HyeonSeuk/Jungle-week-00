@@ -60,7 +60,7 @@ def api_login():
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
         return redirect(url_for('home'))
     else:
-        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.', 'token':token})
 
 @app.route('/login')
 def login():
