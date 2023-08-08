@@ -70,6 +70,24 @@ def api_login():
 @app.route('/login')
 def login():
     return render_template('login.html')
+    
+## 대구광역시 open API에 접근해서 데이터를 가져오는 페이지
+@app.route('/refresh')
+def refresh():
+    url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
+    api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
+    api_key_decode = requests.utils.unquote(api_key)
+    
+    res = requests.get(url, params={'serviceKey':api_key_decode})
+    events = res.json()['msgBody']
+
+    for e in events:
+        db.events.insert_one({
+            'title':e['title'],
+            'beginDt':e['beginDt'],
+            'endDt':e['endDt'],
+            'placeName':e['placeCdNm'],
+            })
 
 '''
 tab 현재 탭 정보: all or fav
