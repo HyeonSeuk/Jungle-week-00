@@ -61,15 +61,20 @@ def api_login():
     password = request.form['password']
     result = db.users.find_one({'email':email})
 
-    if result and bcrypt.check_password_hash(result['password'], password):
-        payload = {
-            'email' : email,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
-        }
-        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-        return redirect(url_for('home'))
-    else:
-        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.', 'token':token})
+    # 일치하는 계정 없음
+    if not result:
+        return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
+
+    # pw가 일치하지 않음
+    if not bcrypt.check_password_hash(result['password'], password):
+        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        
+    payload = {
+        'email' : email,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    return redirect(url_for('home', token=token))
 
 @app.route('/login')
 def login():
