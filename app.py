@@ -1,9 +1,10 @@
 from pymongo import MongoClient
-from flask import Flask, render_template, jsonify, redirect, url_for, request
+from flask import Flask, render_template, jsonify, redirect, url_for, request, flash
 from bson import ObjectId
 import requests, hashlib
 
 app = Flask(__name__)
+app.secret_key = 'jungle7'
 
 client = MongoClient('localhost', 27017)
 db = client.dbjungle
@@ -18,18 +19,22 @@ def home():
 
 @app.route('/signup', methods=['POST', 'GET'])
 def signup():
-    if request.method == 'GET':
-        return render_template('signup.html')
-    else:
+    if request.method == 'POST':
         nickname = request.form['nickname']
         email = request.form['email']
-        password = request.form['password']
+        pwd = request.form['password']
+        pwd_confirm = request.form['password2']
 
-        pw_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        if pwd != pwd_confirm:
+            flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
+            return redirect(url_for('signup'))
 
-        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pw_hash})
+        pwd_hash = hashlib.sha256(pwd.encode('utf-8')).hexdigest()
+        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
         
-        return redirect(url_for('login', msg="회원가입에 성공하였습니다."))
+        return redirect(url_for('login'))
+    
+    return render_template('signup.html') 
 
 @app.route('/login')
 def login():
