@@ -1,13 +1,14 @@
 from pymongo import MongoClient
 from flask import Flask, render_template, jsonify, redirect, url_for, request
-from bson import ObjectId
-import requests, hashlib
+from flask_bcrypt import Bcrypt
+import requests, hashlib, jwt, datetime, os
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 client = MongoClient('localhost', 27017)
 db = client.dbjungle
-
+SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
 # HTML 화면 보여주기
 @app.route('/')
@@ -30,6 +31,27 @@ def signup():
         db.users.insert_one({'nickname':nickname, 'email':email, 'password':pw_hash})
         
         return redirect(url_for('login', msg="회원가입에 성공하였습니다."))
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    email = request.form['email']
+    password = request.form['password']
+    
+    pw_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    
+    result = db.users.find_one({'email':email, 'password':pw_hash})
+    
+    if result is not None:
+        payload = {
+            'email' : email,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+        return redirect(url_for('home'))
+    else:
+        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+
+
 
 @app.route('/login')
 def login():
