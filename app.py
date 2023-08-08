@@ -1,7 +1,7 @@
 from pymongo import MongoClient
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, redirect, url_for, request
 from bson import ObjectId
-import requests
+import requests, hashlib
 
 app = Flask(__name__)
 
@@ -16,9 +16,20 @@ def home():
     print(all_events)
     return render_template('index.html', template_events= all_events)
 
-@app.route('/signup')
+@app.route('/signup', methods=['POST', 'GET'])
 def signup():
-    return render_template('signup.html')
+    if request.method == 'GET':
+        return render_template('signup.html')
+    else:
+        nickname = request.form['nickname']
+        email = request.form['email']
+        password = request.form['password']
+
+        pw_hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pw_hash})
+        
+        return redirect(url_for('login', msg="회원가입에 성공하였습니다."))
 
 @app.route('/login')
 def login():
