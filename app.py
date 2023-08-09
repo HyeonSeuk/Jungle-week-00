@@ -11,7 +11,6 @@ scheduler = BackgroundScheduler()
 scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
-
 client = MongoClient('mongodb://c4fiber:1q2w3e4r!@localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
@@ -103,19 +102,22 @@ def api_login():
     success.set_cookie('token', token, expires=expire_date) 
     return success
 
+## 로그아웃 요청
 @app.route('/api/logout')
 def api_logout():
     response = make_response(redirect(url_for('home')))
     response.set_cookie('token', '', expires=-1)
     return response
 
+## 로그인 페이지
 @app.route('/login')
 def login():
     return render_template('login.html')
-
+    
 # get user id from token
 def get_user_id(token):
-    if token == None: return None
+    if not token:
+        return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
