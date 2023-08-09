@@ -45,32 +45,34 @@ def home():
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
-@app.route('/signup', methods=['POST', 'GET'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if request.method == 'POST':
-        nickname = request.form['nickname']
-        email = request.form['email']
-        pwd = request.form['password']
-        pwd_confirm = request.form['password2']
-
-        # 확인 pwd가 일치하지 않으면 에러메시지와 함께 [GET]'/signup'으로 리다이렉트
-        if pwd != pwd_confirm:
-            flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
-            return redirect(url_for('signup'))
-
-        # 이미 저장된 email이 있으면 반려함
-        result = db.users.find_one({'email':email})
-        if result:
-            flash('등록된 이메일이 이미 존재합니다.', 'error')
-            return redirect(url_for('signup'))
-
-        # pwd암호화 후 저장
-        pwd_hash = bcrypt.generate_password_hash(pwd).decode('utf-8')
-        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
-        
-        return redirect(url_for('login'))
+    if request.method == 'GET':
+        return render_template('signup.html')
     
-    return render_template('signup.html') 
+    nickname = request.form['nickname']
+    email = request.form['email']
+    pwd = request.form['password']
+    pwd_confirm = request.form['password2']
+
+    # 확인 pwd가 일치하지 않으면 에러메시지와 함께 [GET]'/signup'으로 리다이렉트
+    if pwd != pwd_confirm:
+        # flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
+        # return redirect(url_for('/signup'))
+        return jsonify({'result':'fail','msg':'비밀번호가 일치하지 않습니다!'})
+
+    # 이미 저장된 email이 있으면 반려함
+    result = db.users.find_one({'email':email})
+    if result:
+        #flash('등록된 이메일이 이미 존재합니다.', 'error')
+        #return redirect(url_for('signup'))
+        return jsonify({'result':'fail','msg':'등록된 이메일이 이미 존재합니다.'})
+
+    # pwd암호화 후 저장
+    pwd_hash = bcrypt.generate_password_hash(pwd).decode('utf-8')
+    db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
+
+    return jsonify({'result':'success','msg':'회원가입 성공'})
 
 # 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
@@ -103,6 +105,11 @@ def api_login():
     success.set_cookie('token', token, expires=expire_date) 
     return success
 
+    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
+    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=30)
+    success.set_cookie('token', token, expires=expire_date) 
+    return success
+
 @app.route('/api/logout')
 def api_logout():
     response = make_response(redirect(url_for('home')))
@@ -115,7 +122,8 @@ def login():
 
 # get user id from token
 def get_user_id(token):
-    if token == None: return None
+    if not token:
+        return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
@@ -136,6 +144,12 @@ def like(tab, islike, event_id, page, sort, option):
     else:
       db.userevent.delete_one({'user_id': user, 'event_id': event_id})
     return redirect(url_for('home', page=page, tab=tab, sort=sort, option=option))
+
+# get user id from token
+def get_user_id(token):
+    if not token:
+        return ''
+    return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 # fav_count, is_mine
 def get_all_events(user):

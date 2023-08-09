@@ -54,10 +54,56 @@
       </div>
 
       <div>
-        <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">가입</button>
+        <button type="button" onclick="signup()" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">가입</button>
       </div>
     </form>
   </div>
 </div>
 
 {% endblock content %}
+
+{% block javascript %}
+<script>
+  function signup() {
+    var nickname = $('#nickname').val();
+    var email = $('#email').val();
+    var password = $('#password').val();
+    var password_confirm = $('#password2').val();
+
+    if (nickname.length<4 || nickname.length > 10) {
+      alert('닉네임의 길이는 4~10글자 입니다.')
+      return;
+    }
+
+    let regex = new RegExp('[a-z0-9]+@[a-z]+\.[a-z]{2,3}');
+    if (!regex.test(email)) {
+      alert('이메일 형식이 맞지 않습니다!')
+      return;
+    }
+
+    if (password.length<10 || password.length>20) {
+      alert('비밀번호는 10~20자리 입니다.')
+      return;
+    }
+
+    if (password != password_confirm) {
+      alert('비밀번호가 서로 같지 않습니다!')
+      return;
+    }
+
+    $.ajax({
+      type: 'POST',
+      url: '/signup',
+      data: {'nickname':nickname, 'email':email, 'password':password, 'password2':password_confirm},
+      success: function (res) {
+        if (res['result'] == 'fail') {
+          alert(res['msg'])
+        } else {
+          alert('회원가입 성공!');
+          window.location.replace('/login');
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
