@@ -11,10 +11,10 @@ scheduler = BackgroundScheduler()
 scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
-
 client = MongoClient('localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
+
 
 ## 메인 페이지
 @app.route('/')
@@ -24,8 +24,11 @@ def home():
     tab = request.args.get('tab', "all")
     token = request.cookies.get('token', None)
 
+    # token이 존재함 (로그인 되어 있음)
     user_id = get_user_id(token)
     all_events = get_all_events(user_id)
+
+    # 사용자 전용 탭을 선택했을 경우
     if(tab == 'fav'):
         all_events = get_fav_events(user_id)
     return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
@@ -59,6 +62,7 @@ def signup():
     
     return render_template('signup.html') 
 
+## 로그인 검증
 @app.route('/api/login', methods=['POST'])
 def api_login():
     email = request.form['email']
@@ -82,23 +86,22 @@ def api_login():
     response.set_cookie('token', token) 
     return response
 
+## 로그아웃 요청
 @app.route('/api/logout')
 def api_logout():
     response = make_response(redirect(url_for('home')))
     response.set_cookie('token', '', expires=-1)
     return response
 
-
+## 로그인 페이지
 @app.route('/login')
 def login():
     return render_template('login.html')
     
-
-        
-
 # get user id from token
 def get_user_id(token):
-    if token == None: return None
+    if not token:
+        return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
