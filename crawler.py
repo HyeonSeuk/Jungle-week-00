@@ -27,6 +27,19 @@ def find_same_contents(new):
         'endTm': new['endTm']
     })
 
+# 새로운 데이터로 내용 업데이트
+def update_new_content(new, old_id):
+    return event_db.update_one({"_id": old_id}, {"$set": {
+        'title': new['title'],
+        'beginDt': new['beginDt'],
+        'endDt': new['endDt'],
+        'placeName': new['placeCdNm'],
+        'beginTm': new['beginTm'],
+        'endTm': new['endTm'],
+        'eventSeq': new['eventSeq'],
+        'dataStnDt': new['dataStnDt'],
+    }})
+
 
 def insert_api_record(e):
     event_db.insert_one({
@@ -58,22 +71,22 @@ def insert_if_validate_data(new) -> None:
             return
 
         # 일련번호는 같지만 내용이 다르므로 최신 내용을 기록한다.
-        event_db.delete_one({'eventSeq': same_seq['eventSeq']})
-        insert_api_record(new)
-        print("{}: {}".format(new['eventSeq', new['title']]))
+        update_new_content(new, same_seq["_id"])
         return
 
     # case2: 일련번호가 다르다
     # 내용이 같으면 pass
     if find_same_contents(new):
         # 기존에 저장된 데이터의 기준일이 더 최신이라면 기존데이터 유지
-        if same_seq['dateStnDt'] >= new['dateStnDt']:
+        if find_same_contents(new)['dataStnDt'] > new['dataStnDt']:
             return
 
         # 내용이 같지만 새로 받은 데이터의 기준일이 더 최신이므로 갱신
-        event_db.delete_one(find_same_contents(new))
+        update_new_content(new, find_same_contents(new)["_id"])
+        return
     insert_api_record(new)
-    print("{}: {}".format(new['eventSeq'], new['title']))
+    return
+    # print("{}: {}".format(new['eventSeq'], new['title']))
 
 # 웹 크롤링 수행
 def perform_web_crawling():

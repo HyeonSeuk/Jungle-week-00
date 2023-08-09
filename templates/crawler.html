@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="p-3">
+  <table class="table-auto border-collapse border">
+    <thead class="text-sm">
+      <tr>
+        <th class="border-collapse border px-3 py-1 text-center">케이스</th>
+        <th class="border-collapse border px-3 py-1 text-center">공연명</th>
+        <th class="border-collapse border px-3 py-1 text-center">장소명</th>
+        <th class="border-collapse border px-3 py-1 text-center">시작일-종료일</th>
+        <th class="border-collapse border px-3 py-1 text-center">시작시간-종료시간</th>
+        <th class="border-collapse border px-3 py-1 text-center">일련번호</th>
+        <th class="border-collapse border px-3 py-1 text-center">데이터기준일자</th>
+        <th class="border-collapse border px-3 py-1 text-center">예상결과</th>
+      </tr>
+    </thead>
+  <tbody>
+  {% for data in dummy %}
+  <tr class="case text-sm" data-case="{{ data['case']}}">
+    <td class="border-collapse border px-3 py-1 text-center">CASE {{ data['case']}} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['title']}} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['placeCdNm']}} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['beginDt']}}-{{ data['endDt'] }} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['beginTm']}}-{{ data['endTm'] }} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['eventSeq']}} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['dataStnDt']}} </td>
+    <td class="border-collapse border px-3 py-1 text-center">{{ data['result']}} </td>
+  </tr>
+
+  {% endfor %}
+  </tbody>
+  </table>
+  <div class="mt-5 p-3">
+    <code id="db-preview" ></code>
+  </div>
+  
+</div>
+
+<script>
+  $(document).ready(() => {
+    $(".case").each((idx, each) => {
+      $(each).click(() => {
+        let caseNo = $(each).data('case')
+        $.ajax({
+        type: 'POST',
+        url: '/crawler',
+        data: {
+            case: caseNo,
+        }, 
+        success: function (response) {
+          if (response) {
+            $("#db-preview").html("")
+            const newArr = response.filter(each => each['eventSeq'] == "001" || each['eventSeq'] == "002")
+            console.log(newArr)
+            newArr.map(each =>  {
+              $("#db-preview").append(`<div>${JSON.stringify(each)}</div>`)
+            })
+          }
+        }
+      });
+      })
+    })
+  })
+
+  
+</script>
+{% endblock content %}
