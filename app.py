@@ -79,19 +79,17 @@ def api_login():
     result = db.users.find_one({'email':email})
 
     success = make_response(redirect(url_for('home')))
-    # failure = make_response(redirect(url_for()))
+    failure = make_response(redirect(url_for('login')))
 
     # 일치하는 계정 없음
     if not result:
         flash('계정이 존재하지 않습니다.')
-        # return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
-        return success
+        return failure
 
     # pw가 일치하지 않음
     if not bcrypt.check_password_hash(result['password'], password):
-        flash('계정이 존재하지 않습니다.')
-        # return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
-        return success
+        flash('아이디/비밀번호가 일치하지 않습니다.')
+        return failure
         
     payload = {
         'id': str(result['_id']),
@@ -100,7 +98,7 @@ def api_login():
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
     # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
-    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=1)
+    expire_date = datetime.datetime.now() + datetime.timedelta(seconds=5)
     success.set_cookie('token', token, expires=expire_date) 
     return success
 
