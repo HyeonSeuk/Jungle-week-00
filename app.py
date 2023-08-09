@@ -149,10 +149,6 @@ def logout():
     response.set_cookie('token', '', expires=-1)
     return response
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
-
 @app.route('/crawler', methods=["POST", "GET"])
 def test_crawler():
     dummy = [
@@ -161,7 +157,7 @@ def test_crawler():
           {'case': 3, 'eventSeq': '001', 'title': '입학테스트 공부', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-07-01 00:00:00", 'result': '이전 데이터 스킵'},
           {'case': 4, 'eventSeq': '001', 'title': '1주차 알고리즘', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-10 00:00:00", 'result': '최근 데이터로 업데이트'},
           {'case': 5, 'eventSeq': '002', 'title': '1주차 알고리즘', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-11 00:00:00", 'result': '최근 데이터로 업데이트'},
-          {'case': 6, 'eventSeq': '002', 'title': '2주차 알고리즘', 'beginDt': '2023-08-14', 'endDt': '2023-08-19', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-10 00:00:00", 'result': '이전 데이터 스킵'},
+          {'case': 6, 'eventSeq': '002', 'title': '입학테스트 공부', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-10 00:00:00", 'result': '이전 데이터 스킵'},
       ]
     if request.method == "GET":
       db.events.delete_one({'eventSeq': '001'})
