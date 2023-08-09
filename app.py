@@ -47,6 +47,9 @@ def home():
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if request.cookies.get('token'):
+        return redirect(url_for('home'))
+
     if request.method == 'GET':
         return render_template('signup.html')
     
@@ -77,6 +80,9 @@ def signup():
 # 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    if request.cookies.get('token'):
+        return redirect(url_for('home'))
+    
     email = request.form['email']
     password = request.form['password']
     result = db.users.find_one({'email':email})
