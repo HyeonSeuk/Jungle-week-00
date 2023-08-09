@@ -10,7 +10,7 @@
     <div
       class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white"
     >
-      <h1 class="font-bold text-xl">SHOW 대전</h1>
+      <h1 class="font-bold text-xxl">SHOW 대전</h1>
       <p class="max-w-md text-center font-light">
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque ullam
         molestias cum mollitia rem quibusdam nesciunt quam rerum sunt voluptatibus
@@ -22,8 +22,8 @@
 
   <!-- Tab Button -->
   <section id="tabs" data-tab="{{tab}}" class="mt-5 flex gap-3 justify-center items-center mb-5">
-    <a href="/?tab=all&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
-    <a href="/?tab=fav&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
+    <a href="?tab=all&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
+    <a href="?tab=fav&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
   </section>
   
   <!-- Sort Options & paging -->
@@ -31,13 +31,13 @@
     <div class="flex items-center gap-2">
       <select name="sort" class="p-2 border rounded mb-3" onchange="location = this.value;">
         <!-- URL에서 tab 값이 all이든 fav이든 상관 없이 동일하게 동작하도록 URL을 수정 -->
-        <option value="/?tab={{tab}}&sort=like&option={{option}}" {% if sort == 'like' %} selected {% endif %}>인기순</option>
-        <option value="/?tab={{tab}}&sort=name&option={{option}}" {% if sort == 'name' %} selected {% endif %}>이름순</option>
-        <option value="/?tab={{tab}}&sort=date&option={{option}}" {% if sort == 'date' %} selected {% endif %}>최근종료순</option>
+        <option value="?tab={{tab}}&sort=like&option={{option}}" {% if sort == 'like' %} selected {% endif %}>인기순</option>
+        <option value="?tab={{tab}}&sort=name&option={{option}}" {% if sort == 'name' %} selected {% endif %}>이름순</option>
+        <option value="?tab={{tab}}&sort=date&option={{option}}" {% if sort == 'date' %} selected {% endif %}>최근종료순</option>
       </select>
       <div class="flex gap-1">
         <!-- 진행중 공연만 보기 옵션 (endDt > today) -->
-        <input id="filter-option" value="/?tab={{tab}}&sort={{sort}}&option={{"allDue" if option == "beforeDue" else "beforeDue"}}" type="checkbox" {% if option == 'beforeDue' %} checked {% endif %} onchange="location = this.value;"></input>
+        <input id="filter-option" value="?tab={{tab}}&sort={{sort}}&option={{"allDue" if option == "beforeDue" else "beforeDue"}}" type="checkbox" {% if option == 'beforeDue' %} checked {% endif %} onchange="location = this.value;"></input>
         <label for="filter-option" class="text-sm">진행중만 보기</label>
       </div>
     </div>
@@ -48,10 +48,10 @@
       {% for i in range(paging['startPage'], paging['endPage'] + 1) %}
         <a {% if i == pageNo %} id="curr-page" {% endif %}
         class="px-3 py-1 rounded border {% if i == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-	href="/?page={{i}}&tab={{tab}}&sort={{sort}}&option={{option}}">{{i}}</a>
+	      href="?page={{i}}&tab={{tab}}&sort={{sort}}&option={{option}}">{{i}}</a>
       {% endfor %}
       {% if paging['next'] %}
-      <a href="/?page={{paging['endPage']+1}}&tab={{tab}}&sort={{sort}}&option={{option}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
+      <a href="?page={{paging['endPage']+1}}&tab={{tab}}&sort={{sort}}&option={{option}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
       {% endif %}
     </div>
   </section>
@@ -99,7 +99,9 @@
   {% endwith %}
   
 </div>
+{% endblock content %}
 
+{% block javascript %}
 <script>
   $(document).ready(() => {
     // 로그인 필요 모달에서 닫기 버튼 동작
@@ -109,7 +111,5 @@
       window.location.href = `/?page=${page}&tab=${tab}`
     })
   })
-
-  
 </script>
-{% endblock content %}
+{% endblock javascript %}

@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- CryptoJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
     <!-- TailwindCSS (dev) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -45,7 +48,7 @@
             <div id="login-profile">{{nickname}}님 안녕하세요</div>
             <a
               id="logout-button"
-              href="/api/logout"
+              href="/logout"
               class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
             >
               로그아웃
@@ -66,11 +69,5 @@
     {% block javascript %}
     <script></script>
     {% endblock javascript %}
-    <!-- <footer
-      class="flex absolute bottom-0 justify-between w-full p-3 text-gray-500 text-sm"
-    >
-      <p>SW Jungle 2023</p>
-      <p>4조 SHOW 대전</p>
-    </footer> -->
   </body>
 </html>
