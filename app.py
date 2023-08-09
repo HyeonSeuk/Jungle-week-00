@@ -1,9 +1,10 @@
 from pymongo import MongoClient
-from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response
+from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response, Response
 from flask_bcrypt import Bcrypt
 import requests, jwt, datetime, os, time, re
 from bson.objectid import ObjectId
 from apscheduler.schedulers.background import BackgroundScheduler
+import crawler, json
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -55,6 +56,7 @@ def signup():
       return render_template('signup.html')
 
   if request.method == 'POST':
+
     nickname = request.form['nickname']
     email = request.form['email']
     password = request.form['password']
@@ -147,6 +149,36 @@ def logout():
     response.set_cookie('token', '', expires=-1)
     return response
 
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/crawler', methods=["POST", "GET"])
+def test_crawler():
+    dummy = [
+          {'case': 1, 'eventSeq': '001', 'title': '0주차 프로젝트', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-01 00:00:00", 'result': '새로운 데이터 삽입'},
+          {'case': 2, 'eventSeq': '001', 'title': '0주차 프로젝트', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-01 00:00:00", 'result': '중복된 데이터 스킵'},
+          {'case': 3, 'eventSeq': '001', 'title': '입학테스트 공부', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-07-01 00:00:00", 'result': '이전 데이터 스킵'},
+          {'case': 4, 'eventSeq': '001', 'title': '1주차 알고리즘', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-10 00:00:00", 'result': '최근 데이터로 업데이트'},
+          {'case': 5, 'eventSeq': '002', 'title': '1주차 알고리즘', 'beginDt': '2023-08-07', 'endDt': '2023-08-10', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-11 00:00:00", 'result': '최근 데이터로 업데이트'},
+          {'case': 6, 'eventSeq': '002', 'title': '2주차 알고리즘', 'beginDt': '2023-08-14', 'endDt': '2023-08-19', 'placeCdNm': '카이스트 문지캠퍼스', 'beginTm': '1200', 'endTm': '1300', "dataStnDt": "2023-08-10 00:00:00", 'result': '이전 데이터 스킵'},
+      ]
+    if request.method == "GET":
+      db.events.delete_one({'eventSeq': '001'})
+      db.events.delete_one({'eventSeq': '002'})
+      return render_template('crawler.html', dummy=dummy)
+    if request.method == "POST":
+        test_case = int(request.form['case'])
+        crawler.insert_if_validate_data(dummy[test_case-1])
+        all_events = json.dumps(get_all_events(None))
+        return Response(all_events, mimetype="application/json", status=200)
+
+# get user id from token
+def get_user_id(token):
+    if not token:
+        return ''
+    return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
+
 # 좋아요
 @app.route('/fav/<tab>/<islike>/<event_id>/<page>/<sort>/<option>')
 def like(tab, islike, event_id, page, sort, option):
@@ -176,6 +208,7 @@ def is_logged_in(request):
 def get_all_events(user):
     events = list(db.events.find({}))
     for event in events:
+        event["_id"] = str(event['_id'])
         event['fav_count'] = len(list(db.userevent.find({'event_id': str(event['_id'])})))
         event['is_mine'] = False
         if(user):
