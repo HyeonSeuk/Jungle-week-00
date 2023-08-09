@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response
 from flask_bcrypt import Bcrypt
-import requests, jwt, datetime, os, time, re, binascii
+import requests, jwt, datetime, os, time, re
 from bson.objectid import ObjectId
 from apscheduler.schedulers.background import BackgroundScheduler
 
