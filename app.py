@@ -22,6 +22,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 def home():
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
+    sort = request.args.get('sort', 'like')
 
     token = request.cookies.get('token', None)
     user_id = get_user_id(token)
@@ -29,7 +30,17 @@ def home():
     logged_in = nickname != None
 
     events = get_all_events(user_id) if tab == 'all' else get_fav_events(user_id)
-    return render_template('index.html', paging= paging(events, page), pageNo=page, tab=tab, nickname=nickname, loggedIn=logged_in)
+    # if sort == 'like':
+    #     events = sorted(events, key=lambda each: each['fav_count'], reverse=True)
+    
+    if sort == "like":
+        events.sort(key=lambda x: x['fav_count'], reverse=True)
+    elif sort == "date":
+        events.sort(key=lambda x: x['beginDt'], reverse=True)
+    elif sort == "name":
+        events.sort(key=lambda x: x['title'])
+        
+    return render_template('index.html', paging= paging(events, page), pageNo=page, tab=tab, sort=sort, nickname=nickname, loggedIn=logged_in)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
@@ -60,28 +71,38 @@ def signup():
     
     return render_template('signup.html') 
 
+# 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
 def api_login():
     email = request.form['email']
     password = request.form['password']
     result = db.users.find_one({'email':email})
 
+    success = make_response(redirect(url_for('home')))
+    # failure = make_response(redirect(url_for()))
+
     # 일치하는 계정 없음
     if not result:
-        return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
+        flash('계정이 존재하지 않습니다.')
+        # return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
+        return success
 
     # pw가 일치하지 않음
     if not bcrypt.check_password_hash(result['password'], password):
-        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        flash('계정이 존재하지 않습니다.')
+        # return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        return success
         
     payload = {
         'id': str(result['_id']),
         # 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    response = make_response(redirect(url_for('home')))
-    response.set_cookie('token', token) 
-    return response
+
+    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
+    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=1)
+    success.set_cookie('token', token, expires=expire_date) 
+    return success
 
 @app.route('/api/logout')
 def api_logout():
@@ -104,8 +125,8 @@ islike 좋아요 또는 좋아요 취소
 event_id 행사 정보
 page 페이징 넘버
 '''
-@app.route('/<tab>/<islike>/<event_id>/<page>')
-def like(tab, islike, event_id, page):
+@app.route('/fav/<tab>/<islike>/<event_id>/<page>/<sort>')
+def like(tab, islike, event_id, page, sort):
     token = request.cookies.get('token')
     user = get_user_id(token)
     if not user:
@@ -115,7 +136,7 @@ def like(tab, islike, event_id, page):
       db.userevent.insert_one({'user_id': user, 'event_id': event_id})
     else:
       db.userevent.delete_one({'user_id': user, 'event_id': event_id})
-    return redirect(url_for('home', page=page, tab=tab))
+    return redirect(url_for('home', page=page, tab=tab, sort=sort))
 
 # fav_count, is_mine
 def get_all_events(user):

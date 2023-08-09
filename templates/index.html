@@ -21,31 +21,29 @@
   </section>
 
   <!-- Tab Button -->
-  <section id="tabs" data-tab="{{tab}}"class="mt-5 flex gap-3 justify-center items-center mb-5">
-    {% if loggedIn == True %}
-    <a href="/?tab=all" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
-    <a href="/?tab=fav" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
-    {% endif %}
+  <section id="tabs" data-tab="{{tab}}" class="mt-5 flex gap-3 justify-center items-center mb-5">
+    <a href="/?tab=all&sort={{sort}}" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
+    <a href="/?tab=fav&sort={{sort}}" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
   </section>
-
+  
   <!-- Sort Options & paging -->
   <section class="flex justify-between items-center">
     <div class="items-self-end">
-      <select name="sort" class="p-2 border rounded mb-3">
-        <option value="like" selected>인기순</option>
-        <option value="name">이름순</option>
-        <option value="date">공연일자순</option>
+      <select name="sort" class="p-2 border rounded mb-3" onchange="location = this.value;">
+        <!-- URL에서 tab 값이 all이든 fav이든 상관 없이 동일하게 동작하도록 URL을 수정 -->
+        <option value="/?tab={{tab}}&sort=like" {% if sort == 'like' %} selected {% endif %}>인기순</option>
+        <option value="/?tab={{tab}}&sort=name" {% if sort == 'name' %} selected {% endif %}>이름순</option>
+        <option value="/?tab={{tab}}&sort=date" {% if sort == 'date' %} selected {% endif %}>공연일자순</option>
       </select>
     </div>
     <div class="flex gap-2">
-      <!-- [events[i:i+4] for i in range(0, len(events), 4)] -->
       {% if paging['prev'] %}
         <a href="/?page={{paging['startPage']-1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_left</a>
       {% endif %}
       {% for i in range(paging['startPage'], paging['endPage'] + 1) %}
         <a {% if i == pageNo %} id="curr-page" {% endif %}
         class="px-3 py-1 rounded border {% if i == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-        href="/?page={{i}}&tab={{tab}}">{{i}}</a>
+        href="/?page={{i}}&tab={{tab}}&sort={{sort}}">{{i}}</a>
       {% endfor %}
       {% if paging['next'] %}
         <a href="/?page={{paging['endPage']+1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
@@ -69,7 +67,7 @@
         class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
       >
         <small>{{event['fav_count']}} </small>
-        <a data-id="{{event["_id"]}}" data-stat="{{event['is_mine']}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
+        <a href="/fav/{{tab}}/{{ "dislike" if event['is_mine'] == True else "like"}}/{{event["_id"]}}/{{pageNo}}/{{sort}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
           favorite
         </a>
       </div>
@@ -104,17 +102,6 @@
       let page = $('#curr-page').text()
       let tab = $("#tabs").data("tab")
       window.location.href = `/?page=${page}&tab=${tab}`
-    })
-
-    // 좋아요 버튼 동작
-    $('.like').each((i, like) => {
-      $(like).click(() => {
-        let event_id = $(like).data("id") 
-        let islike = $(like).data("stat") === "True" ? 'dislike' : 'like' 
-        let page = $('#curr-page').text()
-        let tab = $("#tabs").data("tab")
-        window.location.href = `/${tab}/${islike}/${event_id}/${page}`
-      })
     })
   })
 
