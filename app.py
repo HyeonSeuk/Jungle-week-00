@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from flask import Flask, render_template, jsonify, redirect, url_for, request, flash, make_response, Response
 from flask_bcrypt import Bcrypt
-import requests, jwt, datetime, os, time
+import requests, jwt, datetime, os, time, re
 from bson.objectid import ObjectId
 from apscheduler.schedulers.background import BackgroundScheduler
 import crawler, json
@@ -44,83 +44,107 @@ def home():
         
     return render_template('index.html', paging= paging(events, page), pageNo=page, tab=tab, sort=sort, nickname=nickname, loggedIn=logged_in, option=option)
 
-## 회원가입 페이지
+# 회원가입 페이지/API
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    # 로그인 상태이면 home으로 리다이렉트
-    if request.cookies.get('token'):
+  # 사용자가 회원가입 페이지에 접근할 경우
+  if request.method == 'GET':
+      if is_logged_in(request):
+        # 이미 로그인된 사용자는 리디렉션
         return redirect(url_for('home'))
-    
-    if request.method == 'GET':
-        return render_template('signup.html')
-    
+      return render_template('signup.html')
+
+  if request.method == 'POST':
+
     nickname = request.form['nickname']
     email = request.form['email']
-    pwd = request.form['password']
-    pwd_confirm = request.form['password2']
+    password = request.form['password']
+    password2 = request.form['password2']
 
-    # 확인 pwd가 일치하지 않으면 에러메시지와 함께 [GET]'/signup'으로 리다이렉트
-    if pwd != pwd_confirm:
-        # flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
-        # return redirect(url_for('/signup'))
-        return jsonify({'result':'fail','msg':'비밀번호가 일치하지 않습니다!'})
-
-    # 이미 저장된 email이 있으면 반려함
+    # 닉네임 길이 검증
+    if len(nickname) < 4 or len(nickname) > 10:
+      return jsonify({'result': 'fail', 'input': 'nickname', 'msg': '닉네임은 4~10자 입니다'}) 
+    
+    # 이메일 빈칸 검증
+    if not email:
+      return jsonify({'result': 'fail', 'input': 'email', 'msg': '이메일을 입력하세요'})
+    
+    # 이메일 형식 검증 TODO 중복코드 -> 함수
+    email_re = re.compile('[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]$')
+    if not email_re.match(email):
+      return jsonify({'result': 'fail', 'input': 'email', 'msg': '이메일 형식으로 입력하세요'})
+    
+    # 이메일 중복 검증
     result = db.users.find_one({'email':email})
     if result:
-        #flash('등록된 이메일이 이미 존재합니다.', 'error')
-        #return redirect(url_for('signup'))
-        return jsonify({'result':'fail','msg':'등록된 이메일이 이미 존재합니다.'})
-
-    # pwd암호화 후 저장
-    pwd_hash = bcrypt.generate_password_hash(pwd).decode('utf-8')
-    db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
-
-    return jsonify({'result':'success','msg':'회원가입 성공'})
-
-# 로그인 요청 API
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    # 로그인 상태이면 home으로 리다이렉트
-    if request.cookies.get('token'):
-        return redirect(url_for('home'))
+      return jsonify({'result':'fail','input': 'email','msg':'등록된 이메일이 이미 존재합니다. 로그인하세요'})
     
+    # 비밀번호 길이 검증
+    if len(password) < 10 or len(password) > 20:
+       return jsonify({'result': 'fail', 'input': 'password','msg': '비밀번호는 10~20자리 입니다'})
+    
+    # 비밀번호 확인 일치여부 검증
+    if password != password2:
+       return jsonify({'result': 'fail', 'input': 'password2','msg': '비밀번호 확인이 불일치합니다'})
+    
+    # 성공 시나리오: password를 암호화하여 db에 저장합니다.
+    password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    db.users.insert_one({'nickname':nickname, 'email':email, 'password':password_hash})
+    return jsonify({'result': 'success', 'msg': '회원가입에 성공했습니다.'})
+
+# 로그인 페이지/API
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+  # 사용자가 로그인 페이지에 접속할 경우
+  if request.method == 'GET':
+    if is_logged_in(request):
+       # 이미 로그인된 사용자는 리디렉션
+       return redirect(url_for('home'))
+    msg = request.args.get('msg', None)
+    if msg: flash(msg)
+    return render_template('login.html')
+  
+  # 사용자가 로그인을 요청할 경우
+  if request.method == 'POST':
     email = request.form['email']
     password = request.form['password']
-    result = db.users.find_one({'email':email})
 
-    success = make_response(redirect(url_for('home')))
-    failure = make_response(redirect(url_for('login')))
+    # 아이디/비밀번호가 없음
+    if not email or not password:
+        return jsonify({'result': 'fail', 'msg': '이메일/비밀번호를 모두 입력하세요'})
+        
+    # 이메일 형식인지 확인
+    email_re = re.compile('[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]$')
+    if not email_re.match(email):
+        return jsonify({'result': 'fail', 'msg': '이메일 형식으로 입력하세요'})
+    
+    # 비밀번호 길이 확인
+    if len(password) < 10:
+        return jsonify({'result': 'fail', 'msg': '비밀번호는 10자 이상입니다'})
 
     # 일치하는 계정 없음
-    if not result:
-        flash('계정이 존재하지 않습니다.')
-        return failure
+    result = db.users.find_one({'email': email})
+    if not result:        
+        return jsonify({'result': "fail", "msg": "계정이 존재하지 않습니다."})
 
-    # pw가 일치하지 않음
-    if not bcrypt.check_password_hash(result['password'], password):
-        flash('아이디/비밀번호가 일치하지 않습니다.')
-        return failure
-        
-    payload = {
-        'id': str(result['_id']),
-        # 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    # 비밀번호가 일치하지 않음
+    chk_pwd = bcrypt.check_password_hash(result['password'], password)
+    if not chk_pwd:
+        return jsonify({'result': "fail", "msg": "이메일/비밀번호가 일치하지 않습니다."})
+    
+    # 로그인 성공, 토큰 발행, string 인코딩  
+    payload = {'id': str(result['_id'])}
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
 
-    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
-    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=30)
-    success.set_cookie('token', token, expires=expire_date) 
-    return success
+    # 리디렉션 주소, 토큰 반환
+    return jsonify({'result': 'success', 'token': token, 'redirect': url_for('home')})
 
-    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
-    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=30)
-    success.set_cookie('token', token, expires=expire_date) 
-    return success
-
-@app.route('/api/logout')
-def api_logout():
+# 로그아웃 API
+@app.route('/logout')
+def logout():
+    if not is_logged_in(request):
+      return '로그아웃할 수 없음'
     response = make_response(redirect(url_for('home')))
     response.set_cookie('token', '', expires=-1)
     return response
@@ -155,32 +179,32 @@ def get_user_id(token):
         return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
-'''
-tab 현재 탭 정보: all or fav
-islike 좋아요 또는 좋아요 취소
-event_id 행사 정보
-page 페이징 넘버
-'''
+# 좋아요
 @app.route('/fav/<tab>/<islike>/<event_id>/<page>/<sort>/<option>')
 def like(tab, islike, event_id, page, sort, option):
-    token = request.cookies.get('token')
-    user = get_user_id(token)
-    if not user:
-      flash("로그인이 필요한 기능입니다.")
-      return redirect(url_for('home', page=page, tab=tab))
-    if islike == "like": # like or dislike
-      db.userevent.insert_one({'user_id': user, 'event_id': event_id})
-    else:
-      db.userevent.delete_one({'user_id': user, 'event_id': event_id})
-    return redirect(url_for('home', page=page, tab=tab, sort=sort, option=option))
+  token = request.cookies.get('token')
+  user = get_user_id(token)
+  if not user:
+    flash("로그인이 필요한 기능입니다.")
+    return redirect(url_for('home', page=page, tab=tab))
+  if islike == "like": # like or dislike
+    db.userevent.insert_one({'user_id': user, 'event_id': event_id})
+  else:
+    db.userevent.delete_one({'user_id': user, 'event_id': event_id})
+  return redirect(url_for('home', page=page, tab=tab, sort=sort, option=option))
 
-# get user id from token
+# 유틸: 토큰 -> 사용자 아이디
 def get_user_id(token):
     if not token:
         return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
-# fav_count, is_mine
+# 유틸: 사용자 로그인 여부
+def is_logged_in(request):
+    token = request.cookies.get('token', None)
+    return get_user_id(token)
+
+# 유틸: 데이터 가공 함수
 def get_all_events(user):
     events = list(db.events.find({}))
     for event in events:
@@ -191,7 +215,7 @@ def get_all_events(user):
             event['is_mine'] = len(list(db.userevent.find({'user_id': user, 'event_id': str(event['_id'])}))) > 0
     return events
 
-# 좋아요한 데이터만 가져옵니다.
+# 유틸: 좋아요한 데이터만
 def get_fav_events(user):
     events = get_all_events(user)
     all_favs = []
@@ -199,7 +223,7 @@ def get_fav_events(user):
         if(event['is_mine']): all_favs.append(event)
     return all_favs
 
-# 페이징에 필요한 값 연산
+# 유틸: 페이징에 필요한 값 연산
 def paging(events, currPage):
     cardsPerPage = 4 # const
     dispageNum = 4
@@ -222,7 +246,7 @@ def paging(events, currPage):
         'next': next,
         'cards': cards
     }
-    
+
 # 웹 크롤링 수행
 def perform_web_crawling():
     print(f'success : {time.strftime("%H:%M:%S")}')
