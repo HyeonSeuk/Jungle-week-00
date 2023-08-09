@@ -104,6 +104,7 @@ def api_login():
     success.set_cookie('token', token, expires=expire_date) 
     return success
 
+## 로그아웃 요청
 @app.route('/api/logout')
 def api_logout():
     response = make_response(redirect(url_for('home')))
@@ -116,7 +117,8 @@ def login():
 
 # get user id from token
 def get_user_id(token):
-    if token == None: return None
+    if not token:
+        return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 '''
