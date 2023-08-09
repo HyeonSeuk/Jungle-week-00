@@ -8,7 +8,7 @@ section {
 {% endblock style %}
 
 {% block content %}
-  <form action="/api/login" method="post">
+  <div >
     <div class="h-screen flex justify-center items-center"> 
       <section class="w-96 p-5 border-solid border-2 border-rgb(245 245 244) flex flex-col justify-center items-center">
         <div class="mb-20 text-4xl font-bold">로그인</div>
@@ -20,6 +20,7 @@ section {
           </div>
           <div class="md:w-2/3">
             <input id="email" name="email" type="email" class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name" type="text" placeholder="example@email">
+            <div id="email-alert" class="text-rose-400 text-sm"></div>
           </div>
         </div>
       
@@ -31,50 +32,61 @@ section {
           </div>
           <div class="md:w-2/3">
             <input id="password" name="password" type="password" class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-password" type="password" placeholder="**********">
+            <div id="password-alert" class="text-rose-400 text-sm"></div>
           </div>
         </div>
       
         <div class="md:flex md:items-center w-full justify-center mb-10">
-          <button  onclick="api_login()" class="shadow bg-blue-500 hover:bg-blue-300 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded w-full">
+          <button id="login" class="shadow bg-blue-500 hover:bg-blue-300 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded w-full">
               로그인
           </button>
+          <div id="login-alert" class="text-rose-400 text-sm"></div>
         </div>
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-          {% for message in messages %}
-            <div class="text-rose-400 text-sm">{{ message }}</div>
-          {% endfor %}
-          {% endif %}
-        {% endwith %}
-      
         <div>
-          <a href="signup" class="underline">아직 회원이 아니신가요? 회원가입</a>
+          <a href="/signup" class="underline">아직 회원이 아니신가요? 회원가입</a>
         </div>
       </section>
     </div>
-  </form>
+  </div>
 
 {% endblock content %}
 
 {% block javascript %}
-<!-- <script>
-  function api_login() {
-    $.ajax({
-        type: 'POST',
-        url: '/api/login',
-        data: {
-            email: $('#email').val(),
-            password: $('#password').val()
-        }, 
-        success: function (response) {
-            if (response['result'] == 'fail') {
-                alert(response['msg']);
-            } else {
-              alert('로그인 성공');
-            }
-        }
-    });
-}
+<script>
+  $(document).ready(() => {
+    $("#login").click(() => {
+      const email = $("#email").val()
+      const password = $("#password").val()
 
-</script> -->
+      if(!email) {
+        $("#email-alert").text("이메일을 입력하세요")
+      } else {
+        $("#email-alert").text("")
+      }
+      if(!password) {
+        $("#password-alert").text("비밀번호를 입력하세요")
+      } else {
+        $("#password-alert").text("")
+      }
+      if(password && email) {
+        const pwd_ecryp = CryptoJS.SHA256(password)
+        $.ajax({
+          type: 'POST',
+          url: '/api/login',
+          data: {
+              email: email,
+              password: JSON.stringify(pwd_ecryp)
+          }, 
+          success: (res) => {
+              if (res['result'] === 'fail') {
+                  $("#login-alert").text(res['msg'])
+              } else {
+                  alert('로그인 성공');
+              }
+            }
+        })
+      }
+    })
+  })
+</script>
 {% endblock javascript %}

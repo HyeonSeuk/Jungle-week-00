@@ -43,15 +43,15 @@
     </div>
     <div class="flex gap-2">
       {% if paging['prev'] %}
-        <a href="/?page={{paging['startPage']-1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_left</a>
+        <a href="/?page={{paging['startPage']-1}}&tab={{tab}}&sort={{sort}}&option={{option}}" class="material-icons p-1 rounded border bg-white">chevron_left</a>
       {% endif %}
       {% for i in range(paging['startPage'], paging['endPage'] + 1) %}
         <a {% if i == pageNo %} id="curr-page" {% endif %}
         class="px-3 py-1 rounded border {% if i == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-        href="/?page={{i}}&tab={{tab}}&sort={{sort}}">{{i}}</a>
+        href="/?page={{i}}&tab={{tab}}&sort={{sort}}&option={{option}}">{{i}}</a>
       {% endfor %}
       {% if paging['next'] %}
-        <a href="/?page={{paging['endPage']+1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
+        <a href="/?page={{paging['endPage']+1}}&tab={{tab}}&sort={{sort}}&option={{option}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
       {% endif %}
     </div>
   </section>

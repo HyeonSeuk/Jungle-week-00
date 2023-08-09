@@ -32,7 +32,7 @@ def home():
 
     events = get_all_events(user_id) if tab == 'all' else get_fav_events(user_id)
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    events = list(filter(lambda each: each['endDt'] > today, events)) if option == 'beforeDue' else events
+    events = list(filter(lambda each: each['endDt'] >= today, events)) if option == 'beforeDue' else events
      
     if sort == "like":
         events.sort(key=lambda x: x['fav_count'], reverse=True)
@@ -47,30 +47,39 @@ def home():
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
 @app.route('/signup', methods=['POST', 'GET'])
 def signup():
-    if request.method == 'POST':
-        nickname = request.form['nickname']
-        email = request.form['email']
-        pwd = request.form['password']
-        pwd_confirm = request.form['password2']
+    if request.method == 'GET':
+        # 로그인된 사용자 접근 제한
+        token = request.cookies("token", None)
+        isLoggedIn = get_user_id(token) != None
+        if isLoggedIn: return redirect('home')
 
-        # 확인 pwd가 일치하지 않으면 에러메시지와 함께 [GET]'/signup'으로 리다이렉트
-        if pwd != pwd_confirm:
-            flash('비밀번호와 확인 비밀번호가 일치하지 않습니다.', 'error')
-            return redirect(url_for('signup'))
-
-        # 이미 저장된 email이 있으면 반려함
-        result = db.users.find_one({'email':email})
-        if result:
-            flash('등록된 이메일이 이미 존재합니다.', 'error')
-            return redirect(url_for('signup'))
+    # if request.method == 'POST':
+    #     nickname = request.form['nickname']
+    #     email = request.form['email']
+    #     pwd_ecryp = jsonify(request.form['pwd_ecryp'])
+ 
+    #     # # 이미 저장된 email이 있으면 반려함
+    #     result = db.users.find_one({'email':email})
+    #     if result:
+    #         flash('등록된 이메일이 이미 존재합니다.', 'error')
+    #         return redirect(url_for('signup'))
 
         # pwd암호화 후 저장
-        pwd_hash = bcrypt.generate_password_hash(pwd).decode('utf-8')
-        db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
+        # pwd_hash = bcrypt.generate_password_hash(pwd).decode('utf-8')
+        # db.users.insert_one({'nickname':nickname, 'email':email, 'password':pwd_hash})
         
-        return redirect(url_for('login'))
-    
-    return render_template('signup.html') 
+        # return redirect(url_for('login'))
+    return render_template('signup.html')
+
+# 로그인 화면을 보여줌
+@app.route('/login')
+def login():
+    # 로그인된 사용자 접근 제한
+    token = request.cookies("token", None)
+    isLoggedIn = get_user_id(token) != None
+    if isLoggedIn: return redirect('home')
+
+    return render_template('login.html')
 
 # 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
@@ -78,24 +87,18 @@ def api_login():
     email = request.form['email']
     password = request.form['password']
     result = db.users.find_one({'email':email})
-
     success = make_response(redirect(url_for('home')))
-    failure = make_response(redirect(url_for('login')))
 
     # 일치하는 계정 없음
     if not result:
-        flash('계정이 존재하지 않습니다.')
-        return failure
+        return jsonify({"result": "fail", "msg": "계정이 존재하지 않습니다."})
 
     # pw가 일치하지 않음
-    if not bcrypt.check_password_hash(result['password'], password):
-        flash('아이디/비밀번호가 일치하지 않습니다.')
-        return failure
+    chk_pwd = result['password'] == password
+    if not chk_pwd:
+        return jsonify({"result": "fail", "msg": "아이디/비밀번호가 일치하지 않습니다."})
         
-    payload = {
-        'id': str(result['_id']),
-        # 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
-    }
+    payload = {'id': str(result['_id'])}
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
     # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
@@ -109,9 +112,6 @@ def api_logout():
     response.set_cookie('token', '', expires=-1)
     return response
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
 
 # get user id from token
 def get_user_id(token):
