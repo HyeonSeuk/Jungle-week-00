@@ -22,19 +22,24 @@
 
   <!-- Tab Button -->
   <section id="tabs" data-tab="{{tab}}" class="mt-5 flex gap-3 justify-center items-center mb-5">
-    <a href="/?tab=all&sort={{sort}}" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
-    <a href="/?tab=fav&sort={{sort}}" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
+    <a href="/?tab=all&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
+    <a href="/?tab=fav&sort={{sort}}&option={{option}}" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
   </section>
   
   <!-- Sort Options & paging -->
   <section class="flex justify-between items-center">
-    <div class="items-self-end">
+    <div class="flex items-center gap-2">
       <select name="sort" class="p-2 border rounded mb-3" onchange="location = this.value;">
         <!-- URL에서 tab 값이 all이든 fav이든 상관 없이 동일하게 동작하도록 URL을 수정 -->
-        <option value="/?tab={{tab}}&sort=like" {% if sort == 'like' %} selected {% endif %}>인기순</option>
-        <option value="/?tab={{tab}}&sort=name" {% if sort == 'name' %} selected {% endif %}>이름순</option>
-        <option value="/?tab={{tab}}&sort=date" {% if sort == 'date' %} selected {% endif %}>공연일자순</option>
+        <option value="/?tab={{tab}}&sort=like&option={{option}}" {% if sort == 'like' %} selected {% endif %}>인기순</option>
+        <option value="/?tab={{tab}}&sort=name&option={{option}}" {% if sort == 'name' %} selected {% endif %}>이름순</option>
+        <option value="/?tab={{tab}}&sort=date&option={{option}}" {% if sort == 'date' %} selected {% endif %}>최근종료순</option>
       </select>
+      <div class="flex gap-1">
+        <!-- 진행중 공연만 보기 옵션 (endDt > today) -->
+        <input id="filter-option" value="/?tab={{tab}}&sort={{sort}}&option={{"allDue" if option == "beforeDue" else "beforeDue"}}" type="checkbox" {% if option == 'beforeDue' %} checked {% endif %} onchange="location = this.value;"></input>
+        <label for="filter-option" class="text-sm">진행중만 보기</label>
+      </div>
     </div>
     <div class="flex gap-2">
       {% if paging['prev'] %}
@@ -67,7 +72,7 @@
         class="absolute bottom-2 right-2 flex justify-center items-center gap-2"
       >
         <small>{{event['fav_count']}} </small>
-        <a href="/fav/{{tab}}/{{ "dislike" if event['is_mine'] == True else "like"}}/{{event["_id"]}}/{{pageNo}}/{{sort}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
+        <a href="/fav/{{tab}}/{{ "dislike" if event['is_mine'] == True else "like"}}/{{event["_id"]}}/{{pageNo}}/{{sort}}/{{option}}" class="like cursor-pointer material-icons text-md {% if event['is_mine'] %} text-rose-400 {% endif %}">
           favorite
         </a>
       </div>
