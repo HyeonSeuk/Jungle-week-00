@@ -11,6 +11,7 @@ scheduler = BackgroundScheduler()
 scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
+
 client = MongoClient('localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
@@ -104,7 +105,11 @@ def api_login():
     success.set_cookie('token', token, expires=expire_date) 
     return success
 
-## 로그아웃 요청
+    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
+    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=30)
+    success.set_cookie('token', token, expires=expire_date) 
+    return success
+
 @app.route('/api/logout')
 def api_logout():
     response = make_response(redirect(url_for('home')))
@@ -114,7 +119,6 @@ def api_logout():
 @app.route('/login')
 def login():
     return render_template('login.html')
-<<<<<<< HEAD
 
 # get user id from token
 def get_user_id(token):
@@ -122,9 +126,6 @@ def get_user_id(token):
         return ''
     return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
-=======
-    
->>>>>>> 3a282f8... refactor(app.py): 가독성을 위해 주석추가 및 코드 위치 이동
 '''
 tab 현재 탭 정보: all or fav
 islike 좋아요 또는 좋아요 취소
@@ -206,7 +207,7 @@ def perform_web_crawling():
     print(endDt)
     res = requests.get(url, params={'serviceKey':api_key_decode, 'pageNo': pageNo, 'numOfRows': numOfRows})
 
-    # 결과를 db에 저장
+    # 결과 db에 저장
     events = res.json()['msgBody']
     for e in events:
         # 이미 존재하면 넘어간다
@@ -215,7 +216,8 @@ def perform_web_crawling():
             'beginDt':e['beginDt'],
             'endDt':e['endDt'],
             'placeName':e['placeCdNm']
-        }): continue
+        }):
+            continue
 
         db.events.insert_one({
             'title':e['title'],
