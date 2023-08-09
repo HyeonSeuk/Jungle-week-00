@@ -16,22 +16,20 @@ client = MongoClient('localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
+
 ## 메인 페이지
 @app.route('/')
 def home():
-    # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
 
     token = request.cookies.get('token', None)
     user_id = get_user_id(token)
-    nickname = None
-    if user_id: nickname = db.users.find_one({'_id': user_id})['nickname']
+    nickname = db.users.find_one({'_id': user_id})['nickname'] if user_id else None
     logged_in = nickname != None
 
-    all_events = get_all_events(user_id)
-    if tab == 'fav': all_events = get_fav_events(user_id)
-    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab, nickname=nickname, loggedIn=logged_in)
+    events = get_all_events(user_id) if tab == 'all' else get_fav_events(user_id)
+    return render_template('index.html', paging= paging(events, page), pageNo=page, tab=tab, nickname=nickname, loggedIn=logged_in)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
@@ -91,7 +89,6 @@ def api_logout():
     response.set_cookie('token', '', expires=-1)
     return response
 
-
 @app.route('/login')
 def login():
     return render_template('login.html')
@@ -120,11 +117,6 @@ def like(tab, islike, event_id, page):
       db.userevent.delete_one({'user_id': user, 'event_id': event_id})
     return redirect(url_for('home', page=page, tab=tab))
 
-# 행사 데이터를 가공
-# 4개씩 페이징합니다.
-def chunk_events(events):
-    return [events[i:i+4] for i in range(0, len(events), 4)]
-
 # fav_count, is_mine
 def get_all_events(user):
     events = list(db.events.find({}))
@@ -142,6 +134,30 @@ def get_fav_events(user):
     for event in events:
         if(event['is_mine']): all_favs.append(event)
     return all_favs
+
+# 페이징에 필요한 값 연산
+def paging(events, currPage):
+    cardsPerPage = 4 # const
+    dispageNum = 4
+    totalCards = len(events)
+
+    totalPage = ((totalCards - 1) // cardsPerPage) + 1
+    endPage = (((currPage-1) // dispageNum) + 1) * dispageNum
+    if totalPage < endPage: endPage = totalPage
+    startPage = ((currPage-1)//dispageNum)* dispageNum + 1
+    prev = not startPage == 1
+    next = not endPage == totalPage
+
+    startCard = cardsPerPage * (currPage-1)
+    cards = events[startCard:] if currPage == totalPage else events[startCard: startCard+cardsPerPage]
+    return {
+        'totalPage': totalPage,
+        'startPage': startPage,
+        'endPage': endPage,
+        'prev': prev,
+        'next': next,
+        'cards': cards
+    }
     
 # 웹 크롤링 수행
 def perform_web_crawling():
@@ -151,7 +167,11 @@ def perform_web_crawling():
     url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
     api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
     api_key_decode = requests.utils.unquote(api_key)
-    res = requests.get(url, params={'serviceKey':api_key_decode})
+    pageNo = 1
+    numOfRows = 30
+    endDt = datetime.datetime.now().strftime('%Y-%m-%d')
+    print(endDt)
+    res = requests.get(url, params={'serviceKey':api_key_decode, 'pageNo': pageNo, 'numOfRows': numOfRows})
 
     # 결과 db에 저장
     events = res.json()['msgBody']
@@ -175,7 +195,7 @@ def perform_web_crawling():
 
 if __name__ == '__main__':
     # 웹 크롤링 스케쥴러 시작
-    scheduler.add_job(perform_web_crawling, 'interval', minutes=30)
+    scheduler.add_job(perform_web_crawling, 'interval', minutes=60)
     scheduler.start()
 
     app.run('0.0.0.0', port=5000, debug=True)

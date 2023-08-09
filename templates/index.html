@@ -22,8 +22,10 @@
 
   <!-- Tab Button -->
   <section id="tabs" data-tab="{{tab}}"class="mt-5 flex gap-3 justify-center items-center mb-5">
+    {% if loggedIn == True %}
     <a href="/?tab=all" class="p-3 {% if tab == 'all' %} border-b-4 {% else %} text-gray-400 {% endif %}">전체보기</a>
     <a href="/?tab=fav" class="p-3 {% if tab == 'fav' %} border-b-4 {% else %} text-gray-400 {% endif %}">좋아요</a>
+    {% endif %}
   </section>
 
   <!-- Sort Options & paging -->
@@ -35,20 +37,25 @@
         <option value="date">공연일자순</option>
       </select>
     </div>
-
-    <!-- Paging Buttons -->
     <div class="flex gap-2">
-      {% for page in template_events %}
-      <a {% if loop.index == pageNo %} id="curr-page" {% endif %}
-        class="px-3 py-1 rounded border {% if loop.index == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
-        href="/?page={{loop.index}}&tab={{tab}}">{{loop.index}}</a>
+      <!-- [events[i:i+4] for i in range(0, len(events), 4)] -->
+      {% if paging['prev'] %}
+        <a href="/?page={{paging['startPage']-1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_left</a>
+      {% endif %}
+      {% for i in range(paging['startPage'], paging['endPage'] + 1) %}
+        <a {% if i == pageNo %} id="curr-page" {% endif %}
+        class="px-3 py-1 rounded border {% if i == pageNo %} bg-blue-500 text-white {% else %} bg-white {% endif %}"
+        href="/?page={{i}}&tab={{tab}}">{{i}}</a>
       {% endfor %}
+      {% if paging['next'] %}
+        <a href="/?page={{paging['endPage']+1}}&tab={{tab}}" class="material-icons p-1 rounded border bg-white">chevron_right</a>
+      {% endif %}
     </div>
   </section>
 
   <!-- All Event List -->
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-  {% for event in template_events[pageNo-1] %}
+  {% for event in paging['cards'] %}
     {% if (tab == 'fav' and not event['is_mine']) %}
       <div></div>
     {% else %}

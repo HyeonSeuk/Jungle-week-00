@@ -62,7 +62,7 @@
         {% endif %}
       </nav>
     </header>
-    <main>{% block content %} {% endblock %}</main>
+    <main class="container-md">{% block content %} {% endblock %}</main>
     {% block javascript %}
     <script></script>
     {% endblock javascript %}
@@ -72,29 +72,5 @@
       <p>SW Jungle 2023</p>
       <p>4조 SHOW 대전</p>
     </footer> -->
-
-    <script>
-      // $(document).ready(() => {
-      //   if (getCookie("token")) {
-      //     $("#logged-in").css("display", "block");
-      //     $("#logged-out").css("display", "none");
-      //   } else {
-      //     $("#logged-out").css("display", "block");
-      //     $("#logged-in").css("display", "none");
-      //   }
-      // });
-
-      // handle cookies
-      function getCookie(name) {
-        let matches = document.cookie.match(
-          new RegExp(
-            "(?:^|; )" +
-              name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") +
-              "=([^;]*)"
-          )
-        );
-        return matches ? matches[1] : undefined;
-      }
-    </script>
   </body>
 </html>
