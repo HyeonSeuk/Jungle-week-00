@@ -114,12 +114,6 @@ def api_logout():
 def login():
     return render_template('login.html')
     
-# get user id from token
-def get_user_id(token):
-    if not token:
-        return ''
-    return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
-
 '''
 tab 현재 탭 정보: all or fav
 islike 좋아요 또는 좋아요 취소
@@ -138,6 +132,12 @@ def like(tab, islike, event_id, page, sort, option):
     else:
       db.userevent.delete_one({'user_id': user, 'event_id': event_id})
     return redirect(url_for('home', page=page, tab=tab, sort=sort, option=option))
+
+# get user id from token
+def get_user_id(token):
+    if not token:
+        return ''
+    return ObjectId(jwt.decode(token, SECRET_KEY, algorithms='HS256')['id'])
 
 # fav_count, is_mine
 def get_all_events(user):
@@ -195,7 +195,7 @@ def perform_web_crawling():
     print(endDt)
     res = requests.get(url, params={'serviceKey':api_key_decode, 'pageNo': pageNo, 'numOfRows': numOfRows})
 
-    # 결과 db에 저장
+    # 결과를 db에 저장
     events = res.json()['msgBody']
     for e in events:
         # 이미 존재하면 넘어간다
@@ -204,8 +204,7 @@ def perform_web_crawling():
             'beginDt':e['beginDt'],
             'endDt':e['endDt'],
             'placeName':e['placeCdNm']
-        }):
-            continue
+        }): continue
 
         db.events.insert_one({
             'title':e['title'],
