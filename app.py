@@ -47,9 +47,10 @@ def home():
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    # 로그인 상태이면 home으로 리다이렉트
     if request.cookies.get('token'):
         return redirect(url_for('home'))
-
+    
     if request.method == 'GET':
         return render_template('signup.html')
     
@@ -80,6 +81,7 @@ def signup():
 # 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    # 로그인 상태이면 home으로 리다이렉트
     if request.cookies.get('token'):
         return redirect(url_for('home'))
     
