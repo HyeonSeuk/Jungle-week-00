@@ -12,7 +12,7 @@ scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
 
-client = MongoClient('mongodb://c4fiber:1q2w3e4r!@localhost', 27017)
+client = MongoClient('localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
