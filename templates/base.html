@@ -4,14 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Bootstrap CSS -->
-    <!-- <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
-      integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
-      crossorigin="anonymous"
-    /> -->
-
     <!-- TailwindCSS (dev) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -46,30 +38,31 @@
   </head>
   <body>
     <header>
-      <nav class="w-full bg-slate-100 flex justify-between items-center">
-        <div class="container p-3">
-          <a class="font-bold" href="/">SHOW 대전</a>
-        </div>
-        <div id="login-area">
+      <nav class="w-full bg-slate-100 flex justify-between items-center p-3">
+        <a class="font-bold" href="/">SHOW 대전</a>
+        {% if loggedIn == True %}
+          <div class="flex whitespace-nowrap gap-2 text-sm items-center">
+            <div id="login-profile">{{nickname}}님 안녕하세요</div>
+            <a
+              id="logout-button"
+              href="/api/logout"
+              class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
+            >
+              로그아웃
+            </a>
+          </div>
+        {% else %}
           <a
-            id="login-button"
-            href="/login"
-            class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
-          >
-            로그인
-          </a>
-          <div id="login-profile"></div>
-          <a
-            id="logout-button"
-            href="/api/logout"
-            class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
-          >
-            로그아웃
-          </a>
-        </div>
+          id="login-button"
+          href="/login"
+          class="p-1 bg-blue-500 text-white rounded whitespace-nowrap text-sm"
+        >
+          로그인
+        </a>
+        {% endif %}
       </nav>
     </header>
-    <main>{% block content %} {% endblock %}</main>
+    <main class="container-md">{% block content %} {% endblock %}</main>
     {% block javascript %}
     <script></script>
     {% endblock javascript %}
@@ -79,78 +72,5 @@
       <p>SW Jungle 2023</p>
       <p>4조 SHOW 대전</p>
     </footer> -->
-
-    <script>
-      $(document).ready(() => {
-        if (getCookie("token")) {
-          $("#login-profile").css("display", "block");
-          $("#logout-button").css("display", "block");
-          $("#login-button").css("display", "none");
-          // TODO: 서버에서 사용자 닉네임을 반환하여 줄 것이므로 나중에 삭제
-          // $("#logout-button").text(getCookie("token"));
-        } else {
-          $("#login-button").css("display", "block");
-          $("#logout-button").css("display", "none");
-          $("#login-profile").css("display", "none");
-        }
-
-        $("#login-button").click(() => {
-          // 로그인 페이지로 이동, 서버와 통신하여 토큰을 쿠키에 저장함
-          mockLogin();
-          window.location.reload();
-        });
-        $("#logout-button").click(() => {
-          // 쿠키에 저장된 토큰 삭제
-          mockLogout();
-          window.location.reload();
-        });
-      });
-
-      // mock login/out
-      function mockLogin() {
-        document.cookie = "token=001; max-age=3600";
-      }
-      function mockLogout() {
-        deleteCookie("token");
-      }
-
-      // handle cookies
-      function getCookie(name) {
-        let matches = document.cookie.match(
-          new RegExp(
-            "(?:^|; )" +
-              name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, "\\$1") +
-              "=([^;]*)"
-          )
-        );
-        return matches ? matches[1] : undefined;
-      }
-
-      function setCookie(name, value, options = {}) {
-        options = {
-          path: "/",
-          ...options,
-        };
-
-        if (options.expires instanceof Date) {
-          options.expires = options.expires.toUTCString();
-        }
-
-        let updatedCookie =
-          encodeURIComponent(name) + "=" + encodeURIComponent(value);
-        for (let optionKey in options) {
-          updatedCookie += "; " + optionKey;
-          let optionValue = options[optionKey];
-          if (optionValue !== true) {
-            updatedCookie += "=" + optionValue;
-          }
-        }
-        document.cookie = updatedCookie;
-      }
-
-      function deleteCookie(name) {
-        setCookie(name, "", { "max-age": -1 });
-      }
-    </script>
   </body>
 </html>

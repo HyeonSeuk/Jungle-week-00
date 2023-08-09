@@ -16,19 +16,31 @@ client = MongoClient('localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
+
 ## 메인 페이지
 @app.route('/')
 def home():
-    # arg로 전달된 페이징을 확인, 없으면 1
     page = int(request.args.get('page', "1"))
     tab = request.args.get('tab', "all")
-    token = request.cookies.get('token', None)
+    sort = request.args.get('sort', 'like')
 
+    token = request.cookies.get('token', None)
     user_id = get_user_id(token)
-    all_events = get_all_events(user_id)
-    if(tab == 'fav'):
-        all_events = get_fav_events(user_id)
-    return render_template('index.html', template_events= chunk_events(all_events), pageNo=page, tab=tab)
+    nickname = db.users.find_one({'_id': user_id})['nickname'] if user_id else None
+    logged_in = nickname != None
+
+    events = get_all_events(user_id) if tab == 'all' else get_fav_events(user_id)
+    # if sort == 'like':
+    #     events = sorted(events, key=lambda each: each['fav_count'], reverse=True)
+    
+    if sort == "like":
+        events.sort(key=lambda x: x['fav_count'], reverse=True)
+    elif sort == "date":
+        events.sort(key=lambda x: x['beginDt'], reverse=True)
+    elif sort == "name":
+        events.sort(key=lambda x: x['title'])
+        
+    return render_template('index.html', paging= paging(events, page), pageNo=page, tab=tab, sort=sort, nickname=nickname, loggedIn=logged_in)
 
 ## 회원가입 페이지
 # form 입력(nickname, email, pwd, pwd2를 전달받는다.)
@@ -59,28 +71,38 @@ def signup():
     
     return render_template('signup.html') 
 
+# 로그인 요청 API
 @app.route('/api/login', methods=['POST'])
 def api_login():
     email = request.form['email']
     password = request.form['password']
     result = db.users.find_one({'email':email})
 
+    success = make_response(redirect(url_for('home')))
+    # failure = make_response(redirect(url_for()))
+
     # 일치하는 계정 없음
     if not result:
-        return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
+        flash('계정이 존재하지 않습니다.')
+        # return jsonify({'result':'fail', 'msg': '계정이 존재하지 않습니다.'})
+        return success
 
     # pw가 일치하지 않음
     if not bcrypt.check_password_hash(result['password'], password):
-        return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        flash('계정이 존재하지 않습니다.')
+        # return jsonify({'result':'fail', 'msg': '아이디/비밀번호가 일치하지 않습니다.'})
+        return success
         
     payload = {
         'id': str(result['_id']),
         # 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=5)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-    response = make_response(redirect(url_for('home')))
-    response.set_cookie('token', token) 
-    return response
+
+    # 쿠키 만료를 1분으로 설정하여 응답에 삽입, 반환
+    expire_date = datetime.datetime.now() + datetime.timedelta(minutes=1)
+    success.set_cookie('token', token, expires=expire_date) 
+    return success
 
 @app.route('/api/logout')
 def api_logout():
@@ -88,13 +110,9 @@ def api_logout():
     response.set_cookie('token', '', expires=-1)
     return response
 
-
 @app.route('/login')
 def login():
     return render_template('login.html')
-    
-
-        
 
 # get user id from token
 def get_user_id(token):
@@ -107,23 +125,18 @@ islike 좋아요 또는 좋아요 취소
 event_id 행사 정보
 page 페이징 넘버
 '''
-@app.route('/<tab>/<islike>/<event_id>/<page>')
-def like(tab, islike, event_id, page):
+@app.route('/fav/<tab>/<islike>/<event_id>/<page>/<sort>')
+def like(tab, islike, event_id, page, sort):
     token = request.cookies.get('token')
     user = get_user_id(token)
     if not user:
-      flash("로그인 필요")
+      flash("로그인이 필요한 기능입니다.")
       return redirect(url_for('home', page=page, tab=tab))
     if islike == "like": # like or dislike
       db.userevent.insert_one({'user_id': user, 'event_id': event_id})
     else:
       db.userevent.delete_one({'user_id': user, 'event_id': event_id})
-    return redirect(url_for('home', page=page, tab=tab))
-
-# 행사 데이터를 가공
-# 4개씩 페이징합니다.
-def chunk_events(events):
-    return [events[i:i+4] for i in range(0, len(events), 4)]
+    return redirect(url_for('home', page=page, tab=tab, sort=sort))
 
 # fav_count, is_mine
 def get_all_events(user):
@@ -142,6 +155,30 @@ def get_fav_events(user):
     for event in events:
         if(event['is_mine']): all_favs.append(event)
     return all_favs
+
+# 페이징에 필요한 값 연산
+def paging(events, currPage):
+    cardsPerPage = 4 # const
+    dispageNum = 4
+    totalCards = len(events)
+
+    totalPage = ((totalCards - 1) // cardsPerPage) + 1
+    endPage = (((currPage-1) // dispageNum) + 1) * dispageNum
+    if totalPage < endPage: endPage = totalPage
+    startPage = ((currPage-1)//dispageNum)* dispageNum + 1
+    prev = not startPage == 1
+    next = not endPage == totalPage
+
+    startCard = cardsPerPage * (currPage-1)
+    cards = events[startCard:] if currPage == totalPage else events[startCard: startCard+cardsPerPage]
+    return {
+        'totalPage': totalPage,
+        'startPage': startPage,
+        'endPage': endPage,
+        'prev': prev,
+        'next': next,
+        'cards': cards
+    }
     
 # 웹 크롤링 수행
 def perform_web_crawling():
@@ -151,7 +188,11 @@ def perform_web_crawling():
     url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
     api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
     api_key_decode = requests.utils.unquote(api_key)
-    res = requests.get(url, params={'serviceKey':api_key_decode})
+    pageNo = 1
+    numOfRows = 30
+    endDt = datetime.datetime.now().strftime('%Y-%m-%d')
+    print(endDt)
+    res = requests.get(url, params={'serviceKey':api_key_decode, 'pageNo': pageNo, 'numOfRows': numOfRows})
 
     # 결과 db에 저장
     events = res.json()['msgBody']
@@ -175,7 +216,7 @@ def perform_web_crawling():
 
 if __name__ == '__main__':
     # 웹 크롤링 스케쥴러 시작
-    scheduler.add_job(perform_web_crawling, 'interval', minutes=30)
+    scheduler.add_job(perform_web_crawling, 'interval', minutes=60)
     scheduler.start()
 
     app.run('0.0.0.0', port=5000, debug=True)
