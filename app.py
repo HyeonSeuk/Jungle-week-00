@@ -13,7 +13,7 @@ scheduler.configure({'apscheduler.daemonic':False})
 app.secret_key = 'jungle7'
 
 
-client = MongoClient('localhost', 27017)
+client = MongoClient('mongodb://c4fiber:1q2w3e4r!@localhost', 27017)
 db = client.dbjungle
 SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
@@ -135,7 +135,7 @@ def login():
     
     # 로그인 성공, 토큰 발행, string 인코딩  
     payload = {'id': str(result['_id'])}
-    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256').decode('utf-8')
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
     # 리디렉션 주소, 토큰 반환
     return jsonify({'result': 'success', 'token': token, 'redirect': url_for('home')})
