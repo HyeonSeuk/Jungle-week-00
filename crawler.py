@@ -4,7 +4,7 @@ import requests
 
 from pymongo import MongoClient
 
-client = MongoClient('localhost',27017)
+client = MongoClient('mongodb://c4fiber:1q2w3e4r!@localhost',27017)
 db = client.dbjungle
 event_db = db['events']
 
@@ -12,7 +12,7 @@ url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
 api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
 api_key_decode = requests.utils.unquote(api_key)
 numOfRows = 10
-max_page = 45
+max_page = 20
 
 
 # 같은 내용의 데이터가 있는지 판단

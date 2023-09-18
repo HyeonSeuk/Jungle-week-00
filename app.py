@@ -243,43 +243,10 @@ def paging(events, currPage):
         'cards': cards
     }
 
-# 웹 크롤링 수행
-def perform_web_crawling():
-    print(f'success : {time.strftime("%H:%M:%S")}')
-
-    # open api 요청
-    url = f'http://apis.data.go.kr/6300000/eventDataService/eventDataListJson'
-    api_key = r'HF37SOzpRH8DBXxqviNM%2FxjayRLamasAPu7bsT%2F6hu5cK6KT4hRkoQAUVFJOqRxnpjBW4MZMNa5XCMIWRMDnPg%3D%3D'
-    api_key_decode = requests.utils.unquote(api_key)
-    pageNo = 1
-    numOfRows = 30
-    endDt = datetime.datetime.now().strftime('%Y-%m-%d')
-    print(endDt)
-    res = requests.get(url, params={'serviceKey':api_key_decode, 'pageNo': pageNo, 'numOfRows': numOfRows})
-
-    # 결과 db에 저장
-    events = res.json()['msgBody']
-    for e in events:
-        # 이미 존재하면 넘어간다
-        if db.events.find_one({
-            'title':e['title'],
-            'beginDt':e['beginDt'],
-            'endDt':e['endDt'],
-            'placeName':e['placeCdNm']
-        }):
-            continue
-
-        db.events.insert_one({
-            'title':e['title'],
-            'beginDt':e['beginDt'],
-            'endDt':e['endDt'],
-            'placeName':e['placeCdNm']
-        })
-        print(e['title'])
 
 if __name__ == '__main__':
     # 웹 크롤링 스케쥴러 시작
-    scheduler.add_job(perform_web_crawling, 'interval', minutes=60)
+    scheduler.add_job(crawler.perform_web_crawling, 'interval', minutes=30)
     scheduler.start()
 
     app.run('0.0.0.0', port=5000, debug=True)
